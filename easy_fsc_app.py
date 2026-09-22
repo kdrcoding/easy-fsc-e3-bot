@@ -13,6 +13,7 @@ from fsc_core import (
     APPID_LABELS,
     APP_VERSION,
     APP_VERSION_NAME,
+    FEATURE_GUIDE,
     DEFAULT_APPID,
     SIGNATURE_LEN,
     build_fsc,
@@ -88,6 +89,7 @@ class EasyFscApp(tk.Tk):
     def _build_menu(self) -> None:
         menu = tk.Menu(self)
         help_menu = tk.Menu(menu, tearoff=0)
+        help_menu.add_command(label="Feature Guide", command=self._show_feature_guide)
         help_menu.add_command(label="Legal Notice", command=self._show_legal_notice)
         help_menu.add_command(label="About", command=self._show_about)
         menu.add_cascade(label="Help", menu=help_menu)
@@ -203,6 +205,7 @@ class EasyFscApp(tk.Tk):
         ttk.Separator(parent).pack(fill="x", pady=16)
 
         ttk.Button(parent, text="Generate FSC Files", style="Primary.TButton", command=self.generate).pack(fill="x")
+        ttk.Button(parent, text="Feature Guide", command=self._show_feature_guide).pack(fill="x", pady=(8, 0))
         ttk.Button(parent, text="Legal Notice", command=self._show_legal_notice).pack(fill="x", pady=(8, 0))
         ttk.Button(parent, text="Clear", command=self._clear).pack(fill="x", pady=(8, 0))
 
@@ -386,6 +389,32 @@ class EasyFscApp(tk.Tk):
 
     def _show_legal_notice(self) -> None:
         messagebox.showinfo("Legal Notice", LEGAL_NOTICE)
+
+    def _show_feature_guide(self) -> None:
+        top = tk.Toplevel(self)
+        top.title(f"Feature Guide - Easy FSC E3 v{APP_VERSION}")
+        top.geometry("760x620")
+        top.minsize(680, 480)
+
+        frame = ttk.Frame(top, padding=12)
+        frame.pack(fill="both", expand=True)
+        text = tk.Text(
+            frame,
+            wrap="word",
+            font=("Consolas", 10),
+            bg="#0f172a",
+            fg="#e5e7eb",
+            insertbackground="#e5e7eb",
+            relief="flat",
+            padx=10,
+            pady=10,
+        )
+        scroll = ttk.Scrollbar(frame, command=text.yview)
+        text.configure(yscrollcommand=scroll.set)
+        text.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        text.insert("1.0", FEATURE_GUIDE)
+        text.configure(state="disabled")
 
     def _show_about(self) -> None:
         messagebox.showinfo(

@@ -38,5 +38,9 @@ Legal:
   Public bot terms page:
     https://easy-fsc-e3-bot.vercel.app/terms.html
 
+Feature guide:
+  See features.html or:
+    https://easy-fsc-e3-bot.vercel.app/features.html
+
 Telegram bot:
   See TELEGRAM_BOT_SETUP.txt.
