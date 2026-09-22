@@ -4,10 +4,14 @@
       "maxDuration": 30
     }
   },
-  "routes": [
+  "rewrites": [
     {
       "src": "/telegram",
-      "dest": "/api/telegram.py"
+      "dest": "/api/telegram"
+    },
+    {
+      "src": "/",
+      "dest": "/api/telegram"
     }
   ]
 }
