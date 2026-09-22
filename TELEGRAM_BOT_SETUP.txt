@@ -41,8 +41,12 @@ Supabase stats:
   2. Run the SQL from supabase_schema.sql.
   3. In Vercel, add:
        SUPABASE_URL
-       SUPABASE_SECRET_KEY
-     Keep the secret key server-side only. Do not commit it to GitHub.
+       SUPABASE_SERVICE_ROLE_KEY
+     You can also use SUPABASE_SECRET_KEY if your Supabase project provides a
+     server secret key that works with the REST API.
+     Do not use the database password.
+     Do not use the anon/publishable key for admin stats writes.
+     Keep the server key server-side only. Do not commit it to GitHub.
   4. Redeploy Vercel.
   5. Open:
        https://easy-fsc-e3-bot.vercel.app/api/stats

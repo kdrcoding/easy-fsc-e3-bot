@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -40,8 +41,12 @@ def _request(path: str, method: str = "GET", body: dict | None = None) -> tuple[
     request.add_header("Content-Type", "application/json")
     if method == "POST":
         request.add_header("Prefer", "return=minimal")
-    with urllib.request.urlopen(request, timeout=20) as response:
-        return response.status, response.read()
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return response.status, response.read()
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Supabase HTTP {exc.code}: {error_body or exc.reason}") from exc
 
 
 def log_generation(
@@ -80,6 +85,10 @@ def get_stats() -> dict:
 
     query = urllib.parse.urlencode({"select": "*", "limit": "1"})
     _status, body = _request(f"{SUPABASE_STATS_VIEW}?{query}")
+    if not body:
+        raise RuntimeError(
+            "Supabase returned an empty response. Check SUPABASE_URL and use a service_role key, not the database password."
+        )
     rows = json.loads(body.decode("utf-8"))
     stats = rows[0] if rows else {}
     return {

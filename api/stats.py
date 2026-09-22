@@ -19,7 +19,11 @@ class handler(BaseHTTPRequestHandler):
             body = get_stats()
             status = 200
         except Exception as exc:
-            body = {"ok": False, "error": str(exc)}
+            body = {
+                "ok": False,
+                "error": str(exc),
+                "hint": "Check SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY, and run supabase_schema.sql.",
+            }
             status = 500
 
         payload = json.dumps(body).encode("utf-8")
