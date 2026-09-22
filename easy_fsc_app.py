@@ -46,8 +46,8 @@ class EasyFscApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Easy FSC E3")
-        self.geometry("860x650")
-        self.minsize(760, 560)
+        self.geometry("980x760")
+        self.minsize(900, 700)
 
         self.template_path: Path | None = None
         self.output_dir = APP_DIR / "output"
@@ -99,6 +99,12 @@ class EasyFscApp(tk.Tk):
         header.pack(fill="x", pady=(0, 14))
         ttk.Label(header, text="Easy FSC E3", style="Title.TLabel").pack(side="left")
         ttk.Button(header, text="Open Output Folder", command=self._open_output_folder).pack(side="right")
+        ttk.Button(
+            header,
+            text="Generate FSC Files",
+            style="Primary.TButton",
+            command=self.generate,
+        ).pack(side="right", padx=(0, 10))
 
         main = ttk.Frame(outer)
         main.pack(fill="both", expand=True)
@@ -131,6 +137,12 @@ class EasyFscApp(tk.Tk):
         vin.pack(fill="x", pady=(6, 4))
         vin.bind("<KeyRelease>", self._format_vin)
         ttk.Label(parent, text="Use exactly 7 letters or digits.", style="Hint.TLabel").pack(anchor="w")
+        ttk.Button(
+            parent,
+            text="Generate FSC Files",
+            style="Primary.TButton",
+            command=self.generate,
+        ).pack(fill="x", pady=(12, 0))
 
         ttk.Separator(parent).pack(fill="x", pady=16)
 
@@ -185,7 +197,7 @@ class EasyFscApp(tk.Tk):
 
         ttk.Separator(parent).pack(fill="x", pady=16)
 
-        ttk.Button(parent, text="Generate FSC", style="Primary.TButton", command=self.generate).pack(fill="x")
+        ttk.Button(parent, text="Generate FSC Files", style="Primary.TButton", command=self.generate).pack(fill="x")
         ttk.Button(parent, text="Legal Notice", command=self._show_legal_notice).pack(fill="x", pady=(8, 0))
         ttk.Button(parent, text="Clear", command=self._clear).pack(fill="x", pady=(8, 0))
 
