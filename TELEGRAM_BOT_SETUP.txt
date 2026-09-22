@@ -31,6 +31,9 @@ Set the Telegram webhook:
       secret_token = "SECRET"
     }
 
+  Or run:
+    .\set_telegram_webhook.ps1
+
 How users use it:
   1. Open Telegram and message @FSCCreateBOT.
   2. Send /start.

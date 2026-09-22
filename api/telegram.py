@@ -171,7 +171,17 @@ def _handle_update(update: dict) -> None:
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
-        _json_response(self, 200, {"ok": True, "service": "Easy FSC E3 Telegram bot"})
+        _json_response(
+            self,
+            200,
+            {
+                "ok": True,
+                "service": "Easy FSC E3 Telegram bot",
+                "telegram_bot_token_configured": bool(os.environ.get(BOT_TOKEN_ENV)),
+                "telegram_webhook_secret_configured": bool(os.environ.get(WEBHOOK_SECRET_ENV)),
+                "fsc_bot_mode": os.environ.get(OUTPUT_MODE_ENV, "zip"),
+            },
+        )
 
     def do_POST(self) -> None:
         expected_secret = os.environ.get(WEBHOOK_SECRET_ENV)
