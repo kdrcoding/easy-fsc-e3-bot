@@ -17,8 +17,8 @@ SUPABASE_STATS_VIEW = "fsc_generation_stats"
 def _config() -> tuple[str, str] | None:
     url = os.environ.get(SUPABASE_URL_ENV, "").strip().rstrip("/")
     key = (
-        os.environ.get(SUPABASE_SECRET_KEY_ENV, "").strip()
-        or os.environ.get(SUPABASE_SERVICE_ROLE_KEY_ENV, "").strip()
+        os.environ.get(SUPABASE_SERVICE_ROLE_KEY_ENV, "").strip()
+        or os.environ.get(SUPABASE_SECRET_KEY_ENV, "").strip()
     )
     if not url or not key:
         return None
@@ -89,7 +89,16 @@ def get_stats() -> dict:
         raise RuntimeError(
             "Supabase returned an empty response. Check SUPABASE_URL and use a service_role key, not the database password."
         )
-    rows = json.loads(body.decode("utf-8"))
+    decoded_body = body.decode("utf-8", errors="replace")
+    try:
+        rows = json.loads(decoded_body)
+    except json.JSONDecodeError as exc:
+        preview = decoded_body[:500]
+        raise RuntimeError(
+            "Supabase returned non-JSON for stats. "
+            f"Response preview: {preview!r}. "
+            "Use SUPABASE_SERVICE_ROLE_KEY from Supabase Project Settings > API/API Keys."
+        ) from exc
     stats = rows[0] if rows else {}
     return {
         "ok": True,
