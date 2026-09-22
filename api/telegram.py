@@ -99,12 +99,17 @@ def _send_document(chat_id: int, filename: str, content: bytes, caption: str) ->
 def _help_text() -> str:
     return (
         "Easy FSC E3 Bot\n\n"
-        "Send your 7-character VIN, for example:\n"
-        "TEST123\n\n"
-        "The bot will generate FSC files and send them back.\n\n"
         "Created by https://t.me/imkadi\n"
         "Free use only. Not for resale.\n\n"
-        "Use only with systems and files you own or have permission to service."
+        "Send your 7-character VIN, for example:\n"
+        "TEST123\n\n"
+        "The bot will generate FSC files and send them back as a ZIP.\n"
+        "ZIP mode includes 1CR Remote Start App IDs 017C and 0180.\n\n"
+        "Legal notice:\n"
+        "Use only with systems, vehicles, files, and data that you own or have explicit permission to service. "
+        "You are responsible for following all laws, contracts, warranties, software licenses, and local regulations. "
+        "This bot is provided as-is with no warranty and no official affiliation with any vehicle manufacturer, dealer, "
+        "software vendor, or third party."
     )
 
 
@@ -145,10 +150,18 @@ def _handle_update(update: dict) -> None:
         _send_message(chat_id, _help_text())
         return
 
+    if text.lower() in {"/legal", "/terms", "legal", "terms"}:
+        _send_message(chat_id, _help_text())
+        return
+
     try:
         vin = validate_vin(text).decode("ascii")
     except ValueError as exc:
-        _send_message(chat_id, f"{exc}\n\nSend only the 7-character VIN.")
+        _send_message(
+            chat_id,
+            f"{exc}\n\nSend only the 7-character VIN, for example TEST123.\n\n"
+            "Created by https://t.me/imkadi. Free use only, not for resale.",
+        )
         return
 
     try:
@@ -159,7 +172,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 filename,
                 content,
-                f"FSC generated for {vin}\nCreated by https://t.me/imkadi\nFree use only.",
+                f"FSC generated for {vin}\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
             )
         else:
             content = _build_zip(vin)
@@ -167,7 +180,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 f"FSC_{vin}_all.zip",
                 content,
-                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only.",
+                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
             )
     except Exception:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")

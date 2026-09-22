@@ -21,10 +21,16 @@ No Warranty
 -----------
 This app is provided "as is" without warranties of any kind. The creator is
 not responsible for damage, loss, misuse, legal issues, warranty problems, or
-other consequences caused by use of this app.
+account issues, service interruption, or other consequences caused by use of
+this app or bot.
 
 No Official Affiliation
 -----------------------
 This app is an independent utility and is not endorsed by, sponsored by, or
 affiliated with any vehicle manufacturer, dealer, software vendor, or other
 third party.
+
+User Responsibility
+-------------------
+By using the app or bot, users confirm that they understand these terms and
+accept responsibility for how they use any generated files.

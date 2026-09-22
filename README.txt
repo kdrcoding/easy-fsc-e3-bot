@@ -32,6 +32,8 @@ All App IDs:
 
 Legal:
   See LEGAL_NOTICE.txt.
+  Public bot terms page:
+    https://easy-fsc-e3-bot.vercel.app/terms.html
 
 Telegram bot:
   See TELEGRAM_BOT_SETUP.txt.
