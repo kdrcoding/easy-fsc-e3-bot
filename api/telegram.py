@@ -77,15 +77,15 @@ def _telegram_api(method: str, fields: dict[str, str], files: dict[str, tuple[st
         return json.loads(response.read().decode("utf-8"))
 
 
-def _send_message(chat_id: int, text: str) -> None:
-    _telegram_api(
-        "sendMessage",
-        {
-            "chat_id": str(chat_id),
-            "text": text,
-            "disable_web_page_preview": "true",
-        },
-    )
+def _send_message(chat_id: int, text: str, reply_markup: dict | None = None) -> None:
+    fields = {
+        "chat_id": str(chat_id),
+        "text": text,
+        "disable_web_page_preview": "true",
+    }
+    if reply_markup:
+        fields["reply_markup"] = json.dumps(reply_markup)
+    _telegram_api("sendMessage", fields)
 
 
 def _send_document(chat_id: int, filename: str, content: bytes, caption: str) -> None:
@@ -104,12 +104,39 @@ def _help_text() -> str:
         "Send your 7-character VIN, for example:\n"
         "TEST123\n\n"
         "The bot will generate FSC files and send them back as a ZIP.\n"
-        "ZIP mode includes 1CR Remote Start App IDs 017C and 0180.\n\n"
-        "Legal notice:\n"
+        "ZIP mode includes 1CR Remote Start App IDs 017C and 0180."
+    )
+
+
+def _legal_text() -> str:
+    return (
+        "Legal Notice\n\n"
+        "Free use only. Not for resale.\n\n"
         "Use only with systems, vehicles, files, and data that you own or have explicit permission to service. "
-        "You are responsible for following all laws, contracts, warranties, software licenses, and local regulations. "
+        "You are responsible for following all laws, contracts, warranties, software licenses, and local regulations.\n\n"
         "This bot is provided as-is with no warranty and no official affiliation with any vehicle manufacturer, dealer, "
-        "software vendor, or third party."
+        "software vendor, or third party.\n\n"
+        "Terms: https://easy-fsc-e3-bot.vercel.app/terms.html"
+    )
+
+
+def _main_keyboard() -> dict:
+    return {
+        "keyboard": [
+            [{"text": "Generate FSC ZIP"}],
+            [{"text": "Legal Notice"}, {"text": "Help"}],
+        ],
+        "resize_keyboard": True,
+        "one_time_keyboard": False,
+        "input_field_placeholder": "Send 7-character VIN, example TEST123",
+    }
+
+
+def _short_start_text() -> str:
+    return (
+        "Easy FSC E3 Bot\n"
+        "Free use only. Created by https://t.me/imkadi\n\n"
+        "Tap Generate FSC ZIP, then send your 7-character VIN."
     )
 
 
@@ -146,12 +173,26 @@ def _handle_update(update: dict) -> None:
     if not chat_id:
         return
 
-    if not text or text.lower() in {"/start", "/help"}:
-        _send_message(chat_id, _help_text())
+    normalized_text = text.lower()
+
+    if not text or normalized_text == "/start":
+        _send_message(chat_id, _short_start_text(), _main_keyboard())
         return
 
-    if text.lower() in {"/legal", "/terms", "legal", "terms"}:
-        _send_message(chat_id, _help_text())
+    if normalized_text in {"/help", "help"}:
+        _send_message(chat_id, _help_text(), _main_keyboard())
+        return
+
+    if normalized_text in {"/legal", "/terms", "legal", "terms", "legal notice"}:
+        _send_message(chat_id, _legal_text(), _main_keyboard())
+        return
+
+    if normalized_text in {"generate fsc zip", "generate", "fsc", "zip"}:
+        _send_message(
+            chat_id,
+            "Send the 7-character VIN now, for example TEST123.",
+            _main_keyboard(),
+        )
         return
 
     try:
@@ -161,6 +202,7 @@ def _handle_update(update: dict) -> None:
             chat_id,
             f"{exc}\n\nSend only the 7-character VIN, for example TEST123.\n\n"
             "Created by https://t.me/imkadi. Free use only, not for resale.",
+            _main_keyboard(),
         )
         return
 
