@@ -108,6 +108,11 @@ def _help_text() -> str:
     )
 
 
+def _bot_mode() -> str:
+    mode = os.environ.get(OUTPUT_MODE_ENV, "zip").strip().lower()
+    return mode if mode in {"zip", "single"} else "zip"
+
+
 def _build_zip(vin_text: str) -> bytes:
     template = load_template()
     vin = validate_vin(vin_text)
@@ -147,7 +152,7 @@ def _handle_update(update: dict) -> None:
         return
 
     try:
-        mode = os.environ.get(OUTPUT_MODE_ENV, "zip").strip().lower()
+        mode = _bot_mode()
         if mode == "single":
             filename, content = _build_single(vin)
             _send_document(
@@ -179,7 +184,8 @@ class handler(BaseHTTPRequestHandler):
                 "service": "Easy FSC E3 Telegram bot",
                 "telegram_bot_token_configured": bool(os.environ.get(BOT_TOKEN_ENV)),
                 "telegram_webhook_secret_configured": bool(os.environ.get(WEBHOOK_SECRET_ENV)),
-                "fsc_bot_mode": os.environ.get(OUTPUT_MODE_ENV, "zip"),
+                "fsc_bot_mode_configured": os.environ.get(OUTPUT_MODE_ENV, "zip"),
+                "fsc_bot_mode_effective": _bot_mode(),
             },
         )
 
