@@ -1,0 +1,43 @@
+Easy FSC E3 Telegram Bot Setup
+==============================
+
+Important:
+  Revoke the Telegram bot token you pasted into chat and create a fresh token
+  in BotFather. Do not put the token in source code.
+
+Recommended free setup:
+  Vercel serverless webhook.
+
+Environment variables to add in Vercel:
+  TELEGRAM_BOT_TOKEN       Your new BotFather token
+  TELEGRAM_WEBHOOK_SECRET  A long random string you choose
+  FSC_BOT_MODE             zip
+
+Optional:
+  FSC_BOT_MODE=single
+  FSC_BOT_APPID=017C
+
+Webhook URL after deploy:
+  https://YOUR-VERCEL-PROJECT.vercel.app/telegram
+
+Set the Telegram webhook:
+  Replace TOKEN, URL, and SECRET, then run this in PowerShell:
+
+  Invoke-RestMethod `
+    -Method Post `
+    -Uri "https://api.telegram.org/botTOKEN/setWebhook" `
+    -Body @{
+      url = "https://YOUR-VERCEL-PROJECT.vercel.app/telegram"
+      secret_token = "SECRET"
+    }
+
+How users use it:
+  1. Open Telegram and message @FSCCreateBOT.
+  2. Send /start.
+  3. Send the 7-character VIN.
+  4. The bot sends back FSC files as a ZIP.
+
+Legal/free-use notice:
+  The bot response includes:
+    Created by https://t.me/imkadi
+    Free use only. Not for resale.

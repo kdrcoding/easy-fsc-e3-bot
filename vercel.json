@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/telegram.py": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/telegram",
+      "dest": "/api/telegram.py"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+build/
+dist/
+output/
+verify/
+compare_old_new/
+__pycache__/
+.vercel/
+*.pyc
+*.pyo
+*.spec

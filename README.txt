@@ -1,0 +1,31 @@
+Easy FSC E3
+============
+
+Created by:
+  https://t.me/imkadi
+
+Free use only. Not for resale.
+
+Run:
+  Double-click run_easy_fsc.bat
+
+Build Windows EXE:
+  Double-click build_exe.bat
+  The finished file will be:
+    dist\Easy_FSC_E3.exe
+
+Use:
+  1. Enter the 7-character VIN.
+  2. Choose One App ID, All App IDs, or ZIP with all App IDs.
+  3. Optional: choose a custom template file.
+  4. Choose the output folder.
+  5. Click Generate FSC.
+
+The generator logic is kept in fsc_core.py and matches the original fsc_E3.py
+constants, offsets, template handling, and FSC output format.
+
+Legal:
+  See LEGAL_NOTICE.txt.
+
+Telegram bot:
+  See TELEGRAM_BOT_SETUP.txt.
