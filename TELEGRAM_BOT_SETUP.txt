@@ -13,6 +13,9 @@ Environment variables to add in Vercel:
   TELEGRAM_WEBHOOK_SECRET  A long random string you choose
   FSC_BOT_MODE             zip
   TELEGRAM_ADMIN_CHAT_ID   Optional: your Telegram numeric chat ID for admin logs
+  SUPABASE_URL             Optional: Supabase project URL for permanent stats
+  SUPABASE_SECRET_KEY      Optional: Supabase server secret key
+                           Legacy alternative: SUPABASE_SERVICE_ROLE_KEY
 
 Optional:
   FSC_BOT_MODE=single
@@ -32,6 +35,18 @@ Admin reader:
   Admin commands:
     /admin
     /stats
+
+Supabase stats:
+  1. Open Supabase SQL Editor.
+  2. Run the SQL from supabase_schema.sql.
+  3. In Vercel, add:
+       SUPABASE_URL
+       SUPABASE_SECRET_KEY
+     Keep the secret key server-side only. Do not commit it to GitHub.
+  4. Redeploy Vercel.
+  5. Open:
+       https://easy-fsc-e3-bot.vercel.app/api/stats
+       https://easy-fsc-e3-bot.vercel.app/
 
 Webhook URL after deploy:
   https://YOUR-VERCEL-PROJECT.vercel.app/telegram

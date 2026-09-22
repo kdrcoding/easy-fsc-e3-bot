@@ -29,6 +29,27 @@
       border-radius: 4px;
     }
     a { color: #0f62fe; }
+    .stats {
+      margin: 20px 0;
+      padding: 18px;
+      background: #f8fafc;
+      border: 1px solid #dbe3ef;
+      border-radius: 8px;
+    }
+    .stats h2 { margin: 0 0 12px; font-size: 18px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .stats-grid div {
+      background: #fff;
+      border: 1px solid #dbe3ef;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .stats-grid strong { display: block; font-size: 24px; }
+    .stats-grid span { color: #64748b; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -37,6 +58,15 @@
     <p>Separated option buttons build. FSC output remains original-match verified.</p>
     <p>Telegram webhook service is deployed.</p>
     <p><strong>Free use only. Not for resale.</strong></p>
+    <section class="stats">
+      <h2>Usage</h2>
+      <div class="stats-grid">
+        <div><strong id="totalRequests">-</strong><span>Requests</span></div>
+        <div><strong id="totalFiles">-</strong><span>FSC files</span></div>
+        <div><strong id="uniqueUsers">-</strong><span>Users</span></div>
+      </div>
+      <p id="statsNote">Loading usage stats...</p>
+    </section>
     <p>Health check: <a href="/api/ping"><code>/api/ping</code></a></p>
     <p>Telegram endpoint: <a href="/api/telegram"><code>/api/telegram</code></a></p>
     <p>Feature guide: <a href="/features.html"><code>/features.html</code></a></p>
@@ -44,5 +74,23 @@
     <p>Legal notice: <a href="/terms.html"><code>/terms.html</code></a></p>
     <p>Created by <a href="https://t.me/imkadi">https://t.me/imkadi</a>.</p>
   </main>
+  <script>
+    async function loadStats() {
+      try {
+        const response = await fetch("/api/stats", { cache: "no-store" });
+        const stats = await response.json();
+        if (!stats.ok) throw new Error(stats.error || "stats unavailable");
+        document.getElementById("totalRequests").textContent = stats.total_requests;
+        document.getElementById("totalFiles").textContent = stats.total_fsc_files;
+        document.getElementById("uniqueUsers").textContent = stats.unique_users;
+        document.getElementById("statsNote").textContent = stats.supabase_configured
+          ? "Live totals from bot generations."
+          : "Stats database is not configured yet.";
+      } catch (error) {
+        document.getElementById("statsNote").textContent = "Stats unavailable.";
+      }
+    }
+    loadStats();
+  </script>
 </body>
 </html>

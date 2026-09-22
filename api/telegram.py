@@ -15,6 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+API_DIR = Path(__file__).resolve().parent
+if str(API_DIR) not in sys.path:
+    sys.path.insert(0, str(API_DIR))
 
 from fsc_core import (
     ALL_APPIDS,
@@ -28,6 +31,7 @@ from fsc_core import (
     parse_appid,
     validate_vin,
 )
+from supabase_helpers import get_stats, log_generation, supabase_configured
 
 
 BOT_TOKEN_ENV = "TELEGRAM_BOT_TOKEN"
@@ -138,6 +142,7 @@ def _notify_admin(user_chat_id: int, vin: str, mode: str, file_count: int, filen
                 f"Files created: {file_count}",
                 f"Sent file: {filename}",
                 f"User chat ID: {user_chat_id}",
+                f"Saved to Supabase: {'yes' if supabase_configured() else 'not configured'}",
             ]
         ),
     )
@@ -235,16 +240,26 @@ def _handle_update(update: dict) -> None:
         if not _is_admin(chat_id):
             _send_message(chat_id, "Admin commands are not available for this chat.", _main_keyboard())
             return
+        try:
+            stats = get_stats()
+        except Exception as exc:
+            _send_message(chat_id, f"Admin Reader\n\nStats error: {exc}", _main_keyboard())
+            return
         _send_message(
             chat_id,
             "\n".join(
                 [
                     "Admin Reader",
                     "",
-                    "Status: enabled",
-                    "The bot sends you a private log message every time FSC files are generated.",
+                    f"Supabase: {'enabled' if stats.get('supabase_configured') else 'not configured'}",
+                    f"Total requests: {stats.get('total_requests', 0)}",
+                    f"Total FSC files: {stats.get('total_fsc_files', 0)}",
+                    f"Unique users: {stats.get('unique_users', 0)}",
+                    f"ZIP requests: {stats.get('zip_requests', 0)}",
+                    f"Single requests: {stats.get('single_requests', 0)}",
+                    f"Last generated: {stats.get('last_generated_at') or 'none'}",
                     "",
-                    "Note: this free setup does not keep a database total. For full lifetime totals, add Supabase or another database later.",
+                    "The bot also sends you a private log message every time FSC files are generated.",
                 ]
             ),
             _main_keyboard(),
@@ -303,6 +318,10 @@ def _handle_update(update: dict) -> None:
                 content,
                 f"FSC generated for {vin}\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
             )
+            try:
+                log_generation(vin=vin, mode="single", file_count=1, sent_filename=filename, user_chat_id=chat_id)
+            except Exception as exc:
+                print(f"Supabase log failed: {exc}", file=sys.stderr)
             _notify_admin(chat_id, vin, "single", 1, filename)
         else:
             content = _build_zip(vin)
@@ -313,6 +332,16 @@ def _handle_update(update: dict) -> None:
                 content,
                 f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized and at your own risk.",
             )
+            try:
+                log_generation(
+                    vin=vin,
+                    mode="zip",
+                    file_count=len(ALL_APPIDS),
+                    sent_filename=filename,
+                    user_chat_id=chat_id,
+                )
+            except Exception as exc:
+                print(f"Supabase log failed: {exc}", file=sys.stderr)
             _notify_admin(chat_id, vin, "zip", len(ALL_APPIDS), filename)
     except Exception:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")
@@ -334,6 +363,7 @@ class handler(BaseHTTPRequestHandler):
                 "version": APP_VERSION,
                 "version_name": APP_VERSION_NAME,
                 "admin_reader_configured": bool(_admin_chat_id()),
+                "supabase_configured": supabase_configured(),
             },
         )
 

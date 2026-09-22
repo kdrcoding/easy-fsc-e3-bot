@@ -51,3 +51,8 @@ Telegram bot:
 Admin reader:
   Set TELEGRAM_ADMIN_CHAT_ID in Vercel to receive a private admin log whenever
   the bot generates files.
+
+Supabase stats:
+  Run supabase_schema.sql in Supabase, then set SUPABASE_URL and
+  SUPABASE_SECRET_KEY in Vercel. The homepage will show total requests, total
+  FSC files generated, and unique users.

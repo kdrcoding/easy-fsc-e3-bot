@@ -6,6 +6,9 @@
     "api/ping.py": {
       "maxDuration": 10
     },
+    "api/stats.py": {
+      "maxDuration": 20
+    },
     "api/telegram.py": {
       "maxDuration": 30
     }
