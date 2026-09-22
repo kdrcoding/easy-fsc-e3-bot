@@ -63,6 +63,7 @@ class EasyFscApp(tk.Tk):
         self.template_var = tk.StringVar(value="Built-in template")
         self.output_var = tk.StringVar(value=str(self.output_dir))
         self.status_var = tk.StringVar(value="Ready")
+        self.mode_hint_var = tk.StringVar()
 
         self._configure_style()
         self._build_menu()
@@ -75,12 +76,15 @@ class EasyFscApp(tk.Tk):
         style.theme_use("clam")
         style.configure("TFrame", background="#f5f7fb")
         style.configure("Card.TFrame", background="#ffffff", relief="flat")
+        style.configure("Step.TFrame", background="#ffffff")
+        style.configure("Actions.TFrame", background="#ffffff")
         style.configure("TLabel", background="#f5f7fb", foreground="#1f2937")
         style.configure("Card.TLabel", background="#ffffff", foreground="#1f2937")
-        style.configure("Title.TLabel", font=("Segoe UI", 20, "bold"))
-        style.configure("Section.TLabel", font=("Segoe UI", 11, "bold"), background="#ffffff")
+        style.configure("Title.TLabel", font=("Segoe UI", 22, "bold"))
+        style.configure("Subtitle.TLabel", font=("Segoe UI", 10), foreground="#64748b")
+        style.configure("Section.TLabel", font=("Segoe UI", 12, "bold"), background="#ffffff")
         style.configure("Hint.TLabel", font=("Segoe UI", 9), foreground="#64748b", background="#ffffff")
-        style.configure("Primary.TButton", font=("Segoe UI", 11, "bold"), padding=(14, 10))
+        style.configure("Primary.TButton", font=("Segoe UI", 13, "bold"), padding=(18, 13))
         style.configure("TButton", font=("Segoe UI", 10), padding=(10, 7))
         style.configure("TRadiobutton", background="#ffffff", foreground="#1f2937", font=("Segoe UI", 10))
         style.configure("TCheckbutton", background="#ffffff", foreground="#1f2937")
@@ -104,14 +108,9 @@ class EasyFscApp(tk.Tk):
         title_box = ttk.Frame(header)
         title_box.pack(side="left")
         ttk.Label(title_box, text=f"Easy FSC E3 v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(title_box, text=APP_VERSION_NAME).pack(anchor="w")
+        ttk.Label(title_box, text=f"{APP_VERSION_NAME} | Same FSC output as original", style="Subtitle.TLabel").pack(anchor="w")
         ttk.Button(header, text="Open Output Folder", command=self._open_output_folder).pack(side="right")
-        ttk.Button(
-            header,
-            text="Generate FSC Files",
-            style="Primary.TButton",
-            command=self.generate,
-        ).pack(side="right", padx=(0, 10))
+        ttk.Button(header, text="Feature Guide", command=self._show_feature_guide).pack(side="right", padx=(0, 10))
 
         main = ttk.Frame(outer)
         main.pack(fill="both", expand=True)
@@ -139,45 +138,52 @@ class EasyFscApp(tk.Tk):
         ).pack(side="right")
 
     def _build_controls(self, parent: ttk.Frame) -> None:
-        ttk.Label(parent, text="1. Enter VIN", style="Section.TLabel").pack(anchor="w")
-        vin = ttk.Entry(parent, textvariable=self.vin_var, font=("Consolas", 18, "bold"), width=12)
-        vin.pack(fill="x", pady=(6, 4))
-        vin.bind("<KeyRelease>", self._format_vin)
-        ttk.Label(parent, text="Use exactly 7 letters or digits.", style="Hint.TLabel").pack(anchor="w")
-        ttk.Button(
+        parent.configure(width=340)
+        parent.pack_propagate(False)
+
+        ttk.Label(parent, text="Create FSC Files", style="Section.TLabel").pack(anchor="w")
+        ttk.Label(
             parent,
-            text="Generate FSC Files",
-            style="Primary.TButton",
-            command=self.generate,
-        ).pack(fill="x", pady=(12, 0))
+            text="Enter VIN, choose output type, then generate.",
+            style="Hint.TLabel",
+            wraplength=300,
+        ).pack(anchor="w", pady=(4, 14))
 
-        ttk.Separator(parent).pack(fill="x", pady=16)
+        ttk.Label(parent, text="1. VIN / Short VIN", style="Section.TLabel").pack(anchor="w")
+        vin = ttk.Entry(parent, textvariable=self.vin_var, font=("Consolas", 22, "bold"), width=12, justify="center")
+        vin.pack(fill="x", pady=(7, 4), ipady=4)
+        vin.bind("<KeyRelease>", self._format_vin)
+        ttk.Label(parent, text="Exactly 7 letters or digits.", style="Hint.TLabel").pack(anchor="w")
 
-        ttk.Label(parent, text="2. Pick App ID", style="Section.TLabel").pack(anchor="w")
+        ttk.Separator(parent).pack(fill="x", pady=18)
+
+        ttk.Label(parent, text="2. Output Type", style="Section.TLabel").pack(anchor="w")
         modes = ttk.Frame(parent, style="Card.TFrame")
-        modes.pack(fill="x", pady=(8, 6))
+        modes.pack(fill="x", pady=(8, 8))
         ttk.Radiobutton(
             modes,
-            text="One App ID",
+            text="One FSC file",
             value="single",
             variable=self.mode_var,
             command=self._sync_mode,
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=3)
         ttk.Radiobutton(
             modes,
-            text="All App IDs",
+            text="Folder with all 21 FSC files",
             value="all",
             variable=self.mode_var,
             command=self._sync_mode,
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=3)
         ttk.Radiobutton(
             modes,
-            text="ZIP with all App IDs",
+            text="ZIP with all 21 FSC files",
             value="zip",
             variable=self.mode_var,
             command=self._sync_mode,
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=3)
+        ttk.Label(parent, textvariable=self.mode_hint_var, style="Hint.TLabel", wraplength=300).pack(anchor="w", pady=(0, 10))
 
+        ttk.Label(parent, text="App ID for one-file mode", style="Hint.TLabel").pack(anchor="w")
         self.appid_combo = ttk.Combobox(
             parent,
             textvariable=self.appid_var,
@@ -190,24 +196,27 @@ class EasyFscApp(tk.Tk):
 
         custom_row = ttk.Frame(parent, style="Card.TFrame")
         custom_row.pack(fill="x", pady=(4, 0))
-        ttk.Label(custom_row, text="Custom:", style="Card.TLabel").pack(side="left")
+        ttk.Label(custom_row, text="Custom App ID:", style="Card.TLabel").pack(side="left")
         self.custom_entry = ttk.Entry(custom_row, textvariable=self.custom_appid_var, width=10)
         self.custom_entry.pack(side="left", padx=(8, 0))
 
-        ttk.Separator(parent).pack(fill="x", pady=16)
+        ttk.Separator(parent).pack(fill="x", pady=18)
 
         ttk.Label(parent, text="3. Choose Files", style="Section.TLabel").pack(anchor="w")
-        ttk.Button(parent, text="Use Custom Template...", command=self._choose_template).pack(fill="x", pady=(8, 4))
+        ttk.Button(parent, text="Optional Custom Template", command=self._choose_template).pack(fill="x", pady=(8, 4))
         ttk.Label(parent, textvariable=self.template_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
         ttk.Button(parent, text="Choose Output Folder...", command=self._choose_output_dir).pack(fill="x", pady=(12, 4))
         ttk.Label(parent, textvariable=self.output_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
 
-        ttk.Separator(parent).pack(fill="x", pady=16)
+        ttk.Separator(parent).pack(fill="x", pady=18)
 
         ttk.Button(parent, text="Generate FSC Files", style="Primary.TButton", command=self.generate).pack(fill="x")
-        ttk.Button(parent, text="Feature Guide", command=self._show_feature_guide).pack(fill="x", pady=(8, 0))
-        ttk.Button(parent, text="Legal Notice", command=self._show_legal_notice).pack(fill="x", pady=(8, 0))
-        ttk.Button(parent, text="Clear", command=self._clear).pack(fill="x", pady=(8, 0))
+        secondary = ttk.Frame(parent, style="Actions.TFrame")
+        secondary.pack(fill="x", pady=(10, 0))
+        secondary.columnconfigure((0, 1, 2), weight=1)
+        ttk.Button(secondary, text="Guide", command=self._show_feature_guide).grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        ttk.Button(secondary, text="Legal", command=self._show_legal_notice).grid(row=0, column=1, sticky="ew", padx=5)
+        ttk.Button(secondary, text="Clear", command=self._clear).grid(row=0, column=2, sticky="ew", padx=(5, 0))
 
     def _build_results(self, parent: ttk.Frame) -> None:
         ttk.Label(parent, text="Result", style="Section.TLabel").grid(row=0, column=0, sticky="w")
@@ -246,9 +255,16 @@ class EasyFscApp(tk.Tk):
             self.vin_var.set(value)
 
     def _sync_mode(self) -> None:
-        state = "normal" if self.mode_var.get() == "single" else "disabled"
+        mode = self.mode_var.get()
+        state = "normal" if mode == "single" else "disabled"
         self.appid_combo.configure(state="readonly" if state == "normal" else "disabled")
         self.custom_entry.configure(state=state)
+        hints = {
+            "single": "Creates one .fsc file using the selected App ID.",
+            "all": "Creates a VIN folder containing the original 21 App IDs.",
+            "zip": "Creates one ZIP containing the original 21 App IDs.",
+        }
+        self.mode_hint_var.set(hints.get(mode, ""))
 
     def _choose_template(self) -> None:
         path = filedialog.askopenfilename(
