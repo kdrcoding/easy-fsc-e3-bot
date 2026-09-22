@@ -167,7 +167,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 f"FSC_{vin}_all.zip",
                 content,
-                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nCreated by https://t.me/imkadi\nFree use only.",
+                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only.",
             )
     except Exception:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")

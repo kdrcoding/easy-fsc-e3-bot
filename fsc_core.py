@@ -22,6 +22,7 @@ ALL_APPIDS = (
     0x01E3,
     0x01E4,
     0x01E8,
+    0x01EB,
     0x01EC,
     0x01EE,
     0x01EF,
@@ -36,7 +37,10 @@ ALL_APPIDS = (
 )
 
 APPID_LABELS = {
-    0x017C: "017C - Default",
+    0x017C: "017C - Remote Engine Start DME1 / 1CR",
+    0x0180: "0180 - Remote Engine Start DME2 / 1CR",
+    0x0095: "0095 - Vmax DME1",
+    0x007B: "007B - Vmax DME2",
     0x01A4: "01A4",
     0x01AB: "01AB",
     0x01AC: "01AC",
@@ -47,15 +51,13 @@ APPID_LABELS = {
     0x01E3: "01E3",
     0x01E4: "01E4",
     0x01E8: "01E8",
+    0x01EB: "01EB",
     0x01EC: "01EC",
     0x01EE: "01EE",
     0x01EF: "01EF",
     0x01F0: "01F0",
     0x01F1: "01F1",
     0x01F2: "01F2",
-    0x007B: "007B",
-    0x0095: "0095",
-    0x0180: "0180",
     0x0188: "0188",
 }
 

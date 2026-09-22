@@ -39,6 +39,9 @@ How users use it:
   2. Send /start.
   3. Send the 7-character VIN.
   4. The bot sends back FSC files as a ZIP.
+     ZIP mode includes 22 FSC files, including 1CR Remote Start:
+       017C - DME1
+       0180 - DME2
 
 Legal/free-use notice:
   The bot response includes:
