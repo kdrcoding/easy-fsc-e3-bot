@@ -2,7 +2,7 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.2 - Wizard UI verified
+  1.0.3 - Separated option buttons
   FSC output remains original-match verified.
 
 Created by:

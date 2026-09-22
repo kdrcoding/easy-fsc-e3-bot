@@ -131,6 +131,46 @@ class EasyFscApp(tk.Tk):
         button.configure(width=max(1, height // 4))
         return button
 
+    def _option_button(
+        self,
+        parent,
+        text: str,
+        value: str,
+        variable: tk.StringVar,
+        command=None,
+    ) -> tk.Button:
+        def _select() -> None:
+            variable.set(value)
+            if command:
+                command()
+            self._render_step()
+
+        selected = variable.get() == value
+        bg = "#dbeafe" if selected else "#ffffff"
+        hover = "#bfdbfe" if selected else "#f1f5f9"
+        border = "#2563eb" if selected else "#cbd5e1"
+        fg = "#1e3a8a" if selected else "#0f172a"
+        button = tk.Button(
+            parent,
+            text=text,
+            command=_select,
+            bg=bg,
+            fg=fg,
+            activebackground=hover,
+            activeforeground=fg,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            font=("Segoe UI", 11, "bold" if selected else "normal"),
+            anchor="w",
+            padx=14,
+            pady=12,
+        )
+        button.configure(highlightthickness=2, highlightbackground=border)
+        button.bind("<Enter>", lambda _event: button.configure(bg=hover))
+        button.bind("<Leave>", lambda _event: button.configure(bg=bg))
+        return button
+
     def _build_menu(self) -> None:
         menu = tk.Menu(self)
         help_menu = tk.Menu(menu, tearoff=0)
@@ -255,13 +295,9 @@ class EasyFscApp(tk.Tk):
             ("Folder with all 21 FSC files", "all"),
             ("ZIP with all 21 FSC files", "zip"),
         ):
-            ttk.Radiobutton(
-                self.step_body,
-                text=text,
-                value=value,
-                variable=self.mode_var,
-                command=self._sync_mode,
-            ).pack(anchor="w", pady=5)
+            self._option_button(self.step_body, text, value, self.mode_var, self._sync_mode).pack(
+                fill="x", pady=5
+            )
         ttk.Label(self.step_body, textvariable=self.mode_hint_var, style="Hint.TLabel", wraplength=310).pack(
             anchor="w", pady=(10, 16)
         )
