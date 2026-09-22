@@ -64,6 +64,7 @@ class EasyFscApp(tk.Tk):
         self.output_var = tk.StringVar(value=str(self.output_dir))
         self.status_var = tk.StringVar(value="Ready")
         self.mode_hint_var = tk.StringVar()
+        self.scroll_canvas: tk.Canvas | None = None
 
         self._configure_style()
         self._build_menu()
@@ -138,27 +139,53 @@ class EasyFscApp(tk.Tk):
         ).pack(side="right")
 
     def _build_controls(self, parent: ttk.Frame) -> None:
-        parent.configure(width=340)
-        parent.pack_propagate(False)
+        parent.configure(width=360)
+        parent.grid_propagate(False)
+        parent.rowconfigure(0, weight=1)
+        parent.rowconfigure(1, weight=0)
+        parent.columnconfigure(0, weight=1)
 
-        ttk.Label(parent, text="Create FSC Files", style="Section.TLabel").pack(anchor="w")
+        canvas = tk.Canvas(parent, bg="#ffffff", highlightthickness=0, borderwidth=0)
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        content = ttk.Frame(canvas, style="Card.TFrame", padding=(0, 0, 8, 0))
+        window_id = canvas.create_window((0, 0), window=content, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.scroll_canvas = canvas
+
+        def _sync_scroll_region(_event=None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def _sync_width(event) -> None:
+            canvas.itemconfigure(window_id, width=event.width)
+
+        def _wheel(event) -> None:
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        content.bind("<Configure>", _sync_scroll_region)
+        canvas.bind("<Configure>", _sync_width)
+        canvas.bind("<MouseWheel>", _wheel)
+        content.bind("<MouseWheel>", _wheel)
+
+        ttk.Label(content, text="Create FSC Files", style="Section.TLabel").pack(anchor="w")
         ttk.Label(
-            parent,
+            content,
             text="Enter VIN, choose output type, then generate.",
             style="Hint.TLabel",
             wraplength=300,
         ).pack(anchor="w", pady=(4, 14))
 
-        ttk.Label(parent, text="1. VIN / Short VIN", style="Section.TLabel").pack(anchor="w")
-        vin = ttk.Entry(parent, textvariable=self.vin_var, font=("Consolas", 22, "bold"), width=12, justify="center")
+        ttk.Label(content, text="1. VIN / Short VIN", style="Section.TLabel").pack(anchor="w")
+        vin = ttk.Entry(content, textvariable=self.vin_var, font=("Consolas", 22, "bold"), width=12, justify="center")
         vin.pack(fill="x", pady=(7, 4), ipady=4)
         vin.bind("<KeyRelease>", self._format_vin)
-        ttk.Label(parent, text="Exactly 7 letters or digits.", style="Hint.TLabel").pack(anchor="w")
+        ttk.Label(content, text="Exactly 7 letters or digits.", style="Hint.TLabel").pack(anchor="w")
 
-        ttk.Separator(parent).pack(fill="x", pady=18)
+        ttk.Separator(content).pack(fill="x", pady=18)
 
-        ttk.Label(parent, text="2. Output Type", style="Section.TLabel").pack(anchor="w")
-        modes = ttk.Frame(parent, style="Card.TFrame")
+        ttk.Label(content, text="2. Output Type", style="Section.TLabel").pack(anchor="w")
+        modes = ttk.Frame(content, style="Card.TFrame")
         modes.pack(fill="x", pady=(8, 8))
         ttk.Radiobutton(
             modes,
@@ -181,11 +208,11 @@ class EasyFscApp(tk.Tk):
             variable=self.mode_var,
             command=self._sync_mode,
         ).pack(anchor="w", pady=3)
-        ttk.Label(parent, textvariable=self.mode_hint_var, style="Hint.TLabel", wraplength=300).pack(anchor="w", pady=(0, 10))
+        ttk.Label(content, textvariable=self.mode_hint_var, style="Hint.TLabel", wraplength=300).pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(parent, text="App ID for one-file mode", style="Hint.TLabel").pack(anchor="w")
+        ttk.Label(content, text="App ID for one-file mode", style="Hint.TLabel").pack(anchor="w")
         self.appid_combo = ttk.Combobox(
-            parent,
+            content,
             textvariable=self.appid_var,
             values=[APPID_LABELS.get(appid, f"{appid:04X}") for appid in ALL_APPIDS],
             state="readonly",
@@ -194,25 +221,29 @@ class EasyFscApp(tk.Tk):
         self.appid_combo.pack(fill="x", pady=(8, 4))
         self.appid_combo.set(APPID_LABELS[DEFAULT_APPID])
 
-        custom_row = ttk.Frame(parent, style="Card.TFrame")
+        custom_row = ttk.Frame(content, style="Card.TFrame")
         custom_row.pack(fill="x", pady=(4, 0))
         ttk.Label(custom_row, text="Custom App ID:", style="Card.TLabel").pack(side="left")
         self.custom_entry = ttk.Entry(custom_row, textvariable=self.custom_appid_var, width=10)
         self.custom_entry.pack(side="left", padx=(8, 0))
 
-        ttk.Separator(parent).pack(fill="x", pady=18)
+        ttk.Separator(content).pack(fill="x", pady=18)
 
-        ttk.Label(parent, text="3. Choose Files", style="Section.TLabel").pack(anchor="w")
-        ttk.Button(parent, text="Optional Custom Template", command=self._choose_template).pack(fill="x", pady=(8, 4))
-        ttk.Label(parent, textvariable=self.template_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
-        ttk.Button(parent, text="Choose Output Folder...", command=self._choose_output_dir).pack(fill="x", pady=(12, 4))
-        ttk.Label(parent, textvariable=self.output_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
+        ttk.Label(content, text="3. Choose Files", style="Section.TLabel").pack(anchor="w")
+        ttk.Button(content, text="Optional Custom Template", command=self._choose_template).pack(fill="x", pady=(8, 4))
+        ttk.Label(content, textvariable=self.template_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
+        ttk.Button(content, text="Choose Output Folder...", command=self._choose_output_dir).pack(fill="x", pady=(12, 4))
+        ttk.Label(content, textvariable=self.output_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
 
-        ttk.Separator(parent).pack(fill="x", pady=18)
+        actions = ttk.Frame(parent, style="Actions.TFrame", padding=(0, 12, 8, 0))
+        actions.grid(row=1, column=0, columnspan=2, sticky="ew")
+        actions.columnconfigure((0, 1, 2), weight=1)
 
-        ttk.Button(parent, text="Generate FSC Files", style="Primary.TButton", command=self.generate).pack(fill="x")
-        secondary = ttk.Frame(parent, style="Actions.TFrame")
-        secondary.pack(fill="x", pady=(10, 0))
+        ttk.Button(actions, text="Generate FSC Files", style="Primary.TButton", command=self.generate).grid(
+            row=0, column=0, columnspan=3, sticky="ew"
+        )
+        secondary = ttk.Frame(actions, style="Actions.TFrame")
+        secondary.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(10, 0))
         secondary.columnconfigure((0, 1, 2), weight=1)
         ttk.Button(secondary, text="Guide", command=self._show_feature_guide).grid(row=0, column=0, sticky="ew", padx=(0, 5))
         ttk.Button(secondary, text="Legal", command=self._show_legal_notice).grid(row=0, column=1, sticky="ew", padx=5)
