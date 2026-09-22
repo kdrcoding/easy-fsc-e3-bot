@@ -42,6 +42,8 @@ Legal:
 Feature guide:
   See features.html or:
     https://easy-fsc-e3-bot.vercel.app/features.html
+  1CR Remote Start guide:
+    https://easy-fsc-e3-bot.vercel.app/remote-start.html
 
 Telegram bot:
   See TELEGRAM_BOT_SETUP.txt.

@@ -21,6 +21,7 @@ from fsc_core import (
     APP_VERSION,
     APP_VERSION_NAME,
     FEATURE_GUIDE,
+    REMOTE_START_GUIDE,
     DEFAULT_APPID,
     build_fsc,
     load_template,
@@ -137,7 +138,7 @@ def _main_keyboard() -> dict:
     return {
         "keyboard": [
             [{"text": "Generate FSC ZIP"}],
-            [{"text": "Feature Guide"}],
+            [{"text": "Feature Guide"}, {"text": "1CR Remote Start Guide"}],
             [{"text": "Legal Notice"}, {"text": "Help"}],
         ],
         "resize_keyboard": True,
@@ -200,6 +201,17 @@ def _handle_update(update: dict) -> None:
 
     if normalized_text in {"/features", "features", "feature guide", "app ids", "appids"}:
         _send_message(chat_id, FEATURE_GUIDE, _main_keyboard())
+        return
+
+    if normalized_text in {
+        "/1cr",
+        "/remote_start",
+        "1cr",
+        "remote start",
+        "remote start guide",
+        "1cr remote start guide",
+    }:
+        _send_message(chat_id, REMOTE_START_GUIDE, _main_keyboard())
         return
 
     if normalized_text in {"/legal", "/terms", "legal", "terms", "legal notice"}:

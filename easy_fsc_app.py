@@ -14,6 +14,7 @@ from fsc_core import (
     APP_VERSION,
     APP_VERSION_NAME,
     FEATURE_GUIDE,
+    REMOTE_START_GUIDE,
     DEFAULT_APPID,
     SIGNATURE_LEN,
     build_fsc,
@@ -134,6 +135,7 @@ class EasyFscApp(tk.Tk):
         menu = tk.Menu(self)
         help_menu = tk.Menu(menu, tearoff=0)
         help_menu.add_command(label="Feature Guide", command=self._show_feature_guide)
+        help_menu.add_command(label="1CR Remote Start Guide", command=self._show_remote_start_guide)
         help_menu.add_command(label="Legal Notice", command=self._show_legal_notice)
         help_menu.add_command(label="About", command=self._show_about)
         menu.add_cascade(label="Help", menu=help_menu)
@@ -150,6 +152,7 @@ class EasyFscApp(tk.Tk):
         ttk.Label(title_box, text=f"Easy FSC E3 v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text=f"{APP_VERSION_NAME} | Same FSC output as original", style="Subtitle.TLabel").pack(anchor="w")
         self._button(header, "Open Output Folder", self._open_output_folder, "secondary").pack(side="right")
+        self._button(header, "1CR Guide", self._show_remote_start_guide, "quiet").pack(side="right", padx=(0, 10))
         self._button(header, "Feature Guide", self._show_feature_guide, "quiet").pack(side="right", padx=(0, 10))
 
         main = ttk.Frame(outer)
@@ -207,10 +210,11 @@ class EasyFscApp(tk.Tk):
 
         secondary = ttk.Frame(actions, style="Actions.TFrame")
         secondary.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-        secondary.columnconfigure((0, 1, 2), weight=1)
-        self._button(secondary, "Guide", self._show_feature_guide, "quiet").grid(row=0, column=0, sticky="ew", padx=(0, 5))
-        self._button(secondary, "Legal", self._show_legal_notice, "quiet").grid(row=0, column=1, sticky="ew", padx=5)
-        self._button(secondary, "Clear", self._clear, "danger").grid(row=0, column=2, sticky="ew", padx=(5, 0))
+        secondary.columnconfigure((0, 1, 2, 3), weight=1)
+        self._button(secondary, "Guide", self._show_feature_guide, "quiet").grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        self._button(secondary, "1CR", self._show_remote_start_guide, "quiet").grid(row=0, column=1, sticky="ew", padx=4)
+        self._button(secondary, "Legal", self._show_legal_notice, "quiet").grid(row=0, column=2, sticky="ew", padx=4)
+        self._button(secondary, "Clear", self._clear, "danger").grid(row=0, column=3, sticky="ew", padx=(4, 0))
         self._render_step()
 
     def _clear_step(self) -> None:
@@ -528,8 +532,14 @@ class EasyFscApp(tk.Tk):
         messagebox.showinfo("Legal Notice", LEGAL_NOTICE)
 
     def _show_feature_guide(self) -> None:
+        self._show_text_window("Feature Guide", FEATURE_GUIDE)
+
+    def _show_remote_start_guide(self) -> None:
+        self._show_text_window("1CR Remote Start Guide", REMOTE_START_GUIDE)
+
+    def _show_text_window(self, title: str, content: str) -> None:
         top = tk.Toplevel(self)
-        top.title(f"Feature Guide - Easy FSC E3 v{APP_VERSION}")
+        top.title(f"{title} - Easy FSC E3 v{APP_VERSION}")
         top.geometry("760x620")
         top.minsize(680, 480)
 
@@ -550,7 +560,7 @@ class EasyFscApp(tk.Tk):
         text.configure(yscrollcommand=scroll.set)
         text.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
-        text.insert("1.0", FEATURE_GUIDE)
+        text.insert("1.0", content)
         text.configure(state="disabled")
 
     def _show_about(self) -> None:

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1CR Remote Start Guide</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fb; color: #111827; line-height: 1.5; }
+    main { width: min(960px, calc(100% - 32px)); margin: 32px auto; background: #fff; border: 1px solid #dbe3ef; border-radius: 8px; padding: 28px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08); }
+    h1 { margin-top: 0; }
+    code { background: #eef2f7; padding: 2px 6px; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #dbe3ef; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #eef2f7; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>1CR Remote Start Coding Guide</h1>
+    <p>Version 1.0.2. Import needed FSC files with E-Sys to address <code>0x12</code> first.</p>
+    <p>Key FSC App IDs: <code>0x017C</code> DME1 and <code>0x0180</code> DME2.</p>
+    <p>If a module or parameter is missing, skip it and continue with the rest.</p>
+
+    <table>
+      <thead><tr><th>Module</th><th>Address</th><th>Parameter</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>BDC_BODY3</td><td>0x40</td><td>TCM_REMOTE_START</td><td>aktiv</td></tr>
+        <tr><td>BDC_BODY3</td><td>0x40</td><td>RCM_ENABLE_REMOTE_ENGINESTART</td><td>aktiv</td></tr>
+        <tr><td>BDC_BODY3</td><td>0x40</td><td>ALH_AKTIV_IN_PWF_ZUSTAND</td><td>ab_Standfunktionen</td></tr>
+        <tr><td>BDC_BODY3</td><td>0x40</td><td>ASP_STANDHEIZUNG</td><td>aktiv</td></tr>
+        <tr><td>BDC_BODY3</td><td>0x40</td><td>VOKO_SHZ_ALHZ</td><td>VOKO_aktive_alle_Sitze, if seat heating</td></tr>
+        <tr><td>BDC_BODY3</td><td>0x40</td><td>LRE_LHZ_VOKO</td><td>aktiv, if heated steering wheel</td></tr>
+        <tr><td>DKOMBI4</td><td>0x60</td><td>HMI_REMOTE_START_ENABLE</td><td>aktiv</td></tr>
+        <tr><td>DSC_BRS_IB</td><td>0x29</td><td>C_EPBI_Remote_Start</td><td>aktiv, if present</td></tr>
+        <tr><td>FZD2</td><td>0x56</td><td>DWA Motor Remote</td><td>aktiv, if alarm fitted</td></tr>
+        <tr><td>HU_MGU</td><td>0x63</td><td>HVAC_REMOTE_ENGINE_START</td><td>aktiv</td></tr>
+        <tr><td>IHKA4</td><td>0x78</td><td>MIN_TANKINHALT_STANDHEIZEN</td><td>2L</td></tr>
+        <tr><td>IHKA4</td><td>0x78</td><td>STANDKLIMA_MOTORLAUF</td><td>AKTIV_Alle_Aktivierungswege</td></tr>
+        <tr><td>IHKA4</td><td>0x78</td><td>HSH_ANSTEUERUNG_BEI_VOKO</td><td>AKTIV</td></tr>
+        <tr><td>SM2 driver</td><td>0x6D</td><td>SA_SHZ_VOKO_AKTIVIERUNG</td><td>aktiv, if seat heating</td></tr>
+        <tr><td>SM2 passenger</td><td>0x6E</td><td>SA_SHZ_VOKO_AKTIVIERUNG</td><td>aktiv, if seat heating</td></tr>
+      </tbody>
+    </table>
+
+    <p>Use only where authorized. Coding names can vary by vehicle software level.</p>
+  </main>
+</body>
+</html>
