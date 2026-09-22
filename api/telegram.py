@@ -114,8 +114,10 @@ def _legal_text() -> str:
         "Free use only. Not for resale.\n\n"
         "Use only with systems, vehicles, files, and data that you own or have explicit permission to service. "
         "You are responsible for following all laws, contracts, warranties, software licenses, and local regulations.\n\n"
+        "Use at your own risk. If something goes wrong, including damage, data loss, warranty issues, legal issues, "
+        "incorrect use, service interruption, or account problems, the creator is not responsible.\n\n"
         "This bot is provided as-is with no warranty and no official affiliation with any vehicle manufacturer, dealer, "
-        "software vendor, or third party.\n\n"
+        "software vendor, platform provider, or third party.\n\n"
         "Terms: https://easy-fsc-e3-bot.vercel.app/terms.html"
     )
 
@@ -222,7 +224,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 f"FSC_{vin}_all.zip",
                 content,
-                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
+                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized and at your own risk.",
             )
     except Exception:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")

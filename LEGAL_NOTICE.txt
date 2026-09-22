@@ -24,6 +24,14 @@ not responsible for damage, loss, misuse, legal issues, warranty problems, or
 account issues, service interruption, or other consequences caused by use of
 this app or bot.
 
+Use at Your Own Risk
+--------------------
+If something goes wrong, including damage, data loss, warranty issues, legal
+issues, incorrect use, service interruption, account problems, or any other
+problem connected to use of the app, bot, or generated files, the user accepts
+full responsibility. The creator does not accept liability for user actions or
+outcomes.
+
 No Official Affiliation
 -----------------------
 This app is an independent utility and is not endorsed by, sponsored by, or
