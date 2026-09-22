@@ -34,6 +34,7 @@ BOT_TOKEN_ENV = "TELEGRAM_BOT_TOKEN"
 WEBHOOK_SECRET_ENV = "TELEGRAM_WEBHOOK_SECRET"
 OUTPUT_MODE_ENV = "FSC_BOT_MODE"
 APPID_ENV = "FSC_BOT_APPID"
+ADMIN_CHAT_ID_ENV = "TELEGRAM_ADMIN_CHAT_ID"
 
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, body: dict) -> None:
@@ -104,6 +105,41 @@ def _send_document(chat_id: int, filename: str, content: bytes, caption: str) ->
         "sendDocument",
         {"chat_id": str(chat_id), "caption": caption},
         {"document": (filename, content)},
+    )
+
+
+def _admin_chat_id() -> int | None:
+    value = os.environ.get(ADMIN_CHAT_ID_ENV, "").strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def _is_admin(chat_id: int) -> bool:
+    return _admin_chat_id() == chat_id
+
+
+def _notify_admin(user_chat_id: int, vin: str, mode: str, file_count: int, filename: str) -> None:
+    admin_chat_id = _admin_chat_id()
+    if not admin_chat_id:
+        return
+    if admin_chat_id == user_chat_id:
+        return
+    _send_message(
+        admin_chat_id,
+        "\n".join(
+            [
+                "Admin Log - FSC Generated",
+                f"VIN: {vin}",
+                f"Mode: {mode}",
+                f"Files created: {file_count}",
+                f"Sent file: {filename}",
+                f"User chat ID: {user_chat_id}",
+            ]
+        ),
     )
 
 
@@ -195,6 +231,26 @@ def _handle_update(update: dict) -> None:
         _send_message(chat_id, _short_start_text(), _main_keyboard())
         return
 
+    if normalized_text in {"/admin", "admin", "/stats", "stats"}:
+        if not _is_admin(chat_id):
+            _send_message(chat_id, "Admin commands are not available for this chat.", _main_keyboard())
+            return
+        _send_message(
+            chat_id,
+            "\n".join(
+                [
+                    "Admin Reader",
+                    "",
+                    "Status: enabled",
+                    "The bot sends you a private log message every time FSC files are generated.",
+                    "",
+                    "Note: this free setup does not keep a database total. For full lifetime totals, add Supabase or another database later.",
+                ]
+            ),
+            _main_keyboard(),
+        )
+        return
+
     if normalized_text in {"/help", "help"}:
         _send_message(chat_id, _help_text(), _main_keyboard())
         return
@@ -247,14 +303,17 @@ def _handle_update(update: dict) -> None:
                 content,
                 f"FSC generated for {vin}\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
             )
+            _notify_admin(chat_id, vin, "single", 1, filename)
         else:
             content = _build_zip(vin)
+            filename = f"FSC_{vin}_all.zip"
             _send_document(
                 chat_id,
-                f"FSC_{vin}_all.zip",
+                filename,
                 content,
                 f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized and at your own risk.",
             )
+            _notify_admin(chat_id, vin, "zip", len(ALL_APPIDS), filename)
     except Exception:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")
         raise
@@ -274,6 +333,7 @@ class handler(BaseHTTPRequestHandler):
                 "fsc_bot_mode_effective": _bot_mode(),
                 "version": APP_VERSION,
                 "version_name": APP_VERSION_NAME,
+                "admin_reader_configured": bool(_admin_chat_id()),
             },
         )
 

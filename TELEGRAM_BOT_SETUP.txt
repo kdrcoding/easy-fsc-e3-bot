@@ -12,10 +12,26 @@ Environment variables to add in Vercel:
   TELEGRAM_BOT_TOKEN       Your new BotFather token
   TELEGRAM_WEBHOOK_SECRET  A long random string you choose
   FSC_BOT_MODE             zip
+  TELEGRAM_ADMIN_CHAT_ID   Optional: your Telegram numeric chat ID for admin logs
 
 Optional:
   FSC_BOT_MODE=single
   FSC_BOT_APPID=017C
+
+Admin reader:
+  If TELEGRAM_ADMIN_CHAT_ID is set, the bot sends that admin a private log
+  every time FSC files are generated. The log includes VIN, mode, file count,
+  sent filename, and user chat ID.
+
+  To find your chat ID:
+    1. Message the bot from your Telegram account.
+    2. Temporarily check the Vercel function logs, or use a Telegram user info
+       bot to get your numeric Telegram ID.
+    3. Put that number in TELEGRAM_ADMIN_CHAT_ID.
+
+  Admin commands:
+    /admin
+    /stats
 
 Webhook URL after deploy:
   https://YOUR-VERCEL-PROJECT.vercel.app/telegram

@@ -47,3 +47,7 @@ Feature guide:
 
 Telegram bot:
   See TELEGRAM_BOT_SETUP.txt.
+
+Admin reader:
+  Set TELEGRAM_ADMIN_CHAT_ID in Vercel to receive a private admin log whenever
+  the bot generates files.
