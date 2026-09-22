@@ -8,6 +8,7 @@ compare_version_check/
 compare_help_check/
 compare_final_bugcheck/
 compare_v102_check/
+compare_strict_final/
 __pycache__/
 .vercel/
 *.pyc
