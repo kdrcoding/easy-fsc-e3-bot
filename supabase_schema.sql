@@ -11,7 +11,8 @@ create table if not exists public.fsc_generation_logs (
 create index if not exists fsc_generation_logs_created_at_idx
   on public.fsc_generation_logs (created_at desc);
 
-create or replace view public.fsc_generation_stats as
+create or replace view public.fsc_generation_stats
+with (security_invoker = true) as
 select
   count(*)::integer as total_requests,
   coalesce(sum(file_count), 0)::integer as total_fsc_files,
