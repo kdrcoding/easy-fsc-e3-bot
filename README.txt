@@ -25,7 +25,7 @@ The generator logic is kept in fsc_core.py and matches the original fsc_E3.py
 constants, offsets, template handling, and FSC output format.
 
 All App IDs:
-  Batch/ZIP mode generates 22 FSC files.
+  Batch/ZIP mode generates the same 21 FSC files as the original fsc_E3.py.
   1CR Remote Engine Start is included:
     017C - DME1
     0180 - DME2

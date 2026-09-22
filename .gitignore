@@ -3,6 +3,7 @@ dist/
 output/
 verify/
 compare_old_new/
+compare_onedrive_original/
 __pycache__/
 .vercel/
 *.pyc

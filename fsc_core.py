@@ -22,7 +22,6 @@ ALL_APPIDS = (
     0x01E3,
     0x01E4,
     0x01E8,
-    0x01EB,
     0x01EC,
     0x01EE,
     0x01EF,
@@ -51,7 +50,6 @@ APPID_LABELS = {
     0x01E3: "01E3",
     0x01E4: "01E4",
     0x01E8: "01E8",
-    0x01EB: "01EB",
     0x01EC: "01EC",
     0x01EE: "01EE",
     0x01EF: "01EF",
@@ -116,7 +114,7 @@ class FscResult:
 
 
 def validate_vin(vin_text: str) -> bytes:
-    vin = vin_text.strip().upper()
+    vin = vin_text.strip()
     if len(vin) != VIN_LEN:
         raise ValueError(f"VIN must be exactly {VIN_LEN} letters or digits.")
     if not vin.isalnum():

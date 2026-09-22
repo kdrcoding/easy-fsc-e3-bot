@@ -233,7 +233,7 @@ class EasyFscApp(tk.Tk):
         return text
 
     def _format_vin(self, _event: tk.Event | None = None) -> None:
-        value = "".join(ch for ch in self.vin_var.get().upper() if ch.isalnum())[:7]
+        value = "".join(ch for ch in self.vin_var.get() if ch.isalnum())[:7]
         if value != self.vin_var.get():
             self.vin_var.set(value)
 
