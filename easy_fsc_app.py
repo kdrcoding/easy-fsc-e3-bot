@@ -50,8 +50,8 @@ class EasyFscApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title(f"Easy FSC E3 v{APP_VERSION}")
-        self.geometry("980x760")
-        self.minsize(900, 700)
+        self.geometry("1060x760")
+        self.minsize(980, 700)
 
         self.template_path: Path | None = None
         self.output_dir = APP_DIR / "output"
@@ -151,9 +151,11 @@ class EasyFscApp(tk.Tk):
         title_box.pack(side="left")
         ttk.Label(title_box, text=f"Easy FSC E3 v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text=f"{APP_VERSION_NAME} | Same FSC output as original", style="Subtitle.TLabel").pack(anchor="w")
-        self._button(header, "Open Output Folder", self._open_output_folder, "secondary").pack(side="right")
-        self._button(header, "1CR Guide", self._show_remote_start_guide, "quiet").pack(side="right", padx=(0, 10))
-        self._button(header, "Feature Guide", self._show_feature_guide, "quiet").pack(side="right", padx=(0, 10))
+        header_actions = ttk.Frame(header)
+        header_actions.pack(side="right")
+        self._button(header_actions, "Output Folder", self._open_output_folder, "secondary").pack(side="left", padx=(8, 0))
+        self._button(header_actions, "1CR", self._show_remote_start_guide, "quiet").pack(side="left", padx=(8, 0))
+        self._button(header_actions, "Guide", self._show_feature_guide, "quiet").pack(side="left", padx=(8, 0))
 
         main = ttk.Frame(outer)
         main.pack(fill="both", expand=True)
