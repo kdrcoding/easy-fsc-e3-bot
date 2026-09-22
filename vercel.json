@@ -1,17 +1,10 @@
 {
   "functions": {
+    "api/ping.py": {
+      "maxDuration": 10
+    },
     "api/telegram.py": {
       "maxDuration": 30
     }
-  },
-  "rewrites": [
-    {
-      "src": "/telegram",
-      "dest": "/api/telegram"
-    },
-    {
-      "src": "/",
-      "dest": "/api/telegram"
-    }
-  ]
+  }
 }
