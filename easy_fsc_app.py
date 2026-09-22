@@ -64,7 +64,9 @@ class EasyFscApp(tk.Tk):
         self.output_var = tk.StringVar(value=str(self.output_dir))
         self.status_var = tk.StringVar(value="Ready")
         self.mode_hint_var = tk.StringVar()
-        self.scroll_canvas: tk.Canvas | None = None
+        self.wizard_step = 0
+        self.step_title_var = tk.StringVar()
+        self.step_hint_var = tk.StringVar()
 
         self._configure_style()
         self._build_menu()
@@ -145,109 +147,152 @@ class EasyFscApp(tk.Tk):
         parent.rowconfigure(1, weight=0)
         parent.columnconfigure(0, weight=1)
 
-        canvas = tk.Canvas(parent, bg="#ffffff", highlightthickness=0, borderwidth=0)
-        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-        content = ttk.Frame(canvas, style="Card.TFrame", padding=(0, 0, 8, 0))
-        window_id = canvas.create_window((0, 0), window=content, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        self.scroll_canvas = canvas
+        content = ttk.Frame(parent, style="Card.TFrame")
+        content.grid(row=0, column=0, sticky="nsew")
+        content.rowconfigure(2, weight=1)
+        content.columnconfigure(0, weight=1)
 
-        def _sync_scroll_region(_event=None) -> None:
-            canvas.configure(scrollregion=canvas.bbox("all"))
-
-        def _sync_width(event) -> None:
-            canvas.itemconfigure(window_id, width=event.width)
-
-        def _wheel(event) -> None:
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        content.bind("<Configure>", _sync_scroll_region)
-        canvas.bind("<Configure>", _sync_width)
-        canvas.bind("<MouseWheel>", _wheel)
-        content.bind("<MouseWheel>", _wheel)
-
-        ttk.Label(content, text="Create FSC Files", style="Section.TLabel").pack(anchor="w")
-        ttk.Label(
-            content,
-            text="Enter VIN, choose output type, then generate.",
-            style="Hint.TLabel",
-            wraplength=300,
-        ).pack(anchor="w", pady=(4, 14))
-
-        ttk.Label(content, text="1. VIN / Short VIN", style="Section.TLabel").pack(anchor="w")
-        vin = ttk.Entry(content, textvariable=self.vin_var, font=("Consolas", 22, "bold"), width=12, justify="center")
-        vin.pack(fill="x", pady=(7, 4), ipady=4)
-        vin.bind("<KeyRelease>", self._format_vin)
-        ttk.Label(content, text="Exactly 7 letters or digits.", style="Hint.TLabel").pack(anchor="w")
-
-        ttk.Separator(content).pack(fill="x", pady=18)
-
-        ttk.Label(content, text="2. Output Type", style="Section.TLabel").pack(anchor="w")
-        modes = ttk.Frame(content, style="Card.TFrame")
-        modes.pack(fill="x", pady=(8, 8))
-        ttk.Radiobutton(
-            modes,
-            text="One FSC file",
-            value="single",
-            variable=self.mode_var,
-            command=self._sync_mode,
-        ).pack(anchor="w", pady=3)
-        ttk.Radiobutton(
-            modes,
-            text="Folder with all 21 FSC files",
-            value="all",
-            variable=self.mode_var,
-            command=self._sync_mode,
-        ).pack(anchor="w", pady=3)
-        ttk.Radiobutton(
-            modes,
-            text="ZIP with all 21 FSC files",
-            value="zip",
-            variable=self.mode_var,
-            command=self._sync_mode,
-        ).pack(anchor="w", pady=3)
-        ttk.Label(content, textvariable=self.mode_hint_var, style="Hint.TLabel", wraplength=300).pack(anchor="w", pady=(0, 10))
-
-        ttk.Label(content, text="App ID for one-file mode", style="Hint.TLabel").pack(anchor="w")
-        self.appid_combo = ttk.Combobox(
-            content,
-            textvariable=self.appid_var,
-            values=[APPID_LABELS.get(appid, f"{appid:04X}") for appid in ALL_APPIDS],
-            state="readonly",
-            width=22,
+        ttk.Label(content, textvariable=self.step_title_var, style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(content, textvariable=self.step_hint_var, style="Hint.TLabel", wraplength=310).grid(
+            row=1, column=0, sticky="ew", pady=(5, 18)
         )
-        self.appid_combo.pack(fill="x", pady=(8, 4))
-        self.appid_combo.set(APPID_LABELS[DEFAULT_APPID])
-
-        custom_row = ttk.Frame(content, style="Card.TFrame")
-        custom_row.pack(fill="x", pady=(4, 0))
-        ttk.Label(custom_row, text="Custom App ID:", style="Card.TLabel").pack(side="left")
-        self.custom_entry = ttk.Entry(custom_row, textvariable=self.custom_appid_var, width=10)
-        self.custom_entry.pack(side="left", padx=(8, 0))
-
-        ttk.Separator(content).pack(fill="x", pady=18)
-
-        ttk.Label(content, text="3. Choose Files", style="Section.TLabel").pack(anchor="w")
-        ttk.Button(content, text="Optional Custom Template", command=self._choose_template).pack(fill="x", pady=(8, 4))
-        ttk.Label(content, textvariable=self.template_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
-        ttk.Button(content, text="Choose Output Folder...", command=self._choose_output_dir).pack(fill="x", pady=(12, 4))
-        ttk.Label(content, textvariable=self.output_var, style="Hint.TLabel", wraplength=290).pack(anchor="w")
+        self.step_body = ttk.Frame(content, style="Card.TFrame")
+        self.step_body.grid(row=2, column=0, sticky="nsew")
 
         actions = ttk.Frame(parent, style="Actions.TFrame", padding=(0, 12, 8, 0))
         actions.grid(row=1, column=0, columnspan=2, sticky="ew")
-        actions.columnconfigure((0, 1, 2), weight=1)
+        actions.columnconfigure((0, 1), weight=1)
 
-        ttk.Button(actions, text="Generate FSC Files", style="Primary.TButton", command=self.generate).grid(
-            row=0, column=0, columnspan=3, sticky="ew"
-        )
+        self.back_button = ttk.Button(actions, text="Back", command=self._previous_step)
+        self.back_button.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        self.next_button = ttk.Button(actions, text="Next", style="Primary.TButton", command=self._next_step)
+        self.next_button.grid(row=0, column=1, sticky="ew", padx=(6, 0))
+
         secondary = ttk.Frame(actions, style="Actions.TFrame")
-        secondary.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(10, 0))
+        secondary.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         secondary.columnconfigure((0, 1, 2), weight=1)
         ttk.Button(secondary, text="Guide", command=self._show_feature_guide).grid(row=0, column=0, sticky="ew", padx=(0, 5))
         ttk.Button(secondary, text="Legal", command=self._show_legal_notice).grid(row=0, column=1, sticky="ew", padx=5)
         ttk.Button(secondary, text="Clear", command=self._clear).grid(row=0, column=2, sticky="ew", padx=(5, 0))
+        self._render_step()
+
+    def _clear_step(self) -> None:
+        for child in self.step_body.winfo_children():
+            child.destroy()
+
+    def _render_step(self) -> None:
+        self._clear_step()
+        renderers = (
+            self._render_vin_step,
+            self._render_mode_step,
+            self._render_files_step,
+            self._render_review_step,
+        )
+        self.wizard_step = max(0, min(self.wizard_step, len(renderers) - 1))
+        renderers[self.wizard_step]()
+        self.back_button.configure(state="disabled" if self.wizard_step == 0 else "normal")
+        self.next_button.configure(text="Generate FSC Files" if self.wizard_step == len(renderers) - 1 else "Next")
+
+    def _render_vin_step(self) -> None:
+        self.step_title_var.set("1. Enter VIN")
+        self.step_hint_var.set("Use exactly 7 letters or digits. The app keeps the VIN exactly as typed, matching the original script.")
+        vin = ttk.Entry(self.step_body, textvariable=self.vin_var, font=("Consolas", 28, "bold"), width=12, justify="center")
+        vin.pack(fill="x", pady=(18, 8), ipady=8)
+        vin.bind("<KeyRelease>", self._format_vin)
+        vin.focus_set()
+        ttk.Label(self.step_body, text="Example: TEST123", style="Hint.TLabel").pack(anchor="w")
+
+    def _render_mode_step(self) -> None:
+        self.step_title_var.set("2. Choose Output")
+        self.step_hint_var.set("Pick one file, a folder with all original App IDs, or a ZIP.")
+        for text, value in (
+            ("One FSC file", "single"),
+            ("Folder with all 21 FSC files", "all"),
+            ("ZIP with all 21 FSC files", "zip"),
+        ):
+            ttk.Radiobutton(
+                self.step_body,
+                text=text,
+                value=value,
+                variable=self.mode_var,
+                command=self._sync_mode,
+            ).pack(anchor="w", pady=5)
+        ttk.Label(self.step_body, textvariable=self.mode_hint_var, style="Hint.TLabel", wraplength=310).pack(
+            anchor="w", pady=(10, 16)
+        )
+        ttk.Label(self.step_body, text="App ID for one-file mode", style="Hint.TLabel").pack(anchor="w")
+        self.appid_combo = ttk.Combobox(
+            self.step_body,
+            textvariable=self.appid_var,
+            values=[APPID_LABELS.get(appid, f"{appid:04X}") for appid in ALL_APPIDS],
+            state="readonly",
+            width=24,
+        )
+        self.appid_combo.pack(fill="x", pady=(7, 4))
+        if not self.appid_var.get() or self.appid_var.get() == f"{DEFAULT_APPID:04X}":
+            self.appid_combo.set(APPID_LABELS[DEFAULT_APPID])
+        custom_row = ttk.Frame(self.step_body, style="Card.TFrame")
+        custom_row.pack(fill="x", pady=(6, 0))
+        ttk.Label(custom_row, text="Custom App ID:", style="Card.TLabel").pack(side="left")
+        self.custom_entry = ttk.Entry(custom_row, textvariable=self.custom_appid_var, width=10)
+        self.custom_entry.pack(side="left", padx=(8, 0))
+        self._sync_mode()
+
+    def _render_files_step(self) -> None:
+        self.step_title_var.set("3. Files and Folder")
+        self.step_hint_var.set("The built-in template is already selected. Choose an output folder if you want a different location.")
+        ttk.Button(self.step_body, text="Optional Custom Template", command=self._choose_template).pack(fill="x", pady=(14, 5))
+        ttk.Label(self.step_body, textvariable=self.template_var, style="Hint.TLabel", wraplength=310).pack(anchor="w")
+        ttk.Button(self.step_body, text="Choose Output Folder...", command=self._choose_output_dir).pack(fill="x", pady=(18, 5))
+        ttk.Label(self.step_body, textvariable=self.output_var, style="Hint.TLabel", wraplength=310).pack(anchor="w")
+
+    def _render_review_step(self) -> None:
+        self.step_title_var.set("4. Review")
+        self.step_hint_var.set("Check the settings, then generate.")
+        mode_names = {
+            "single": "One FSC file",
+            "all": "Folder with all 21 FSC files",
+            "zip": "ZIP with all 21 FSC files",
+        }
+        lines = [
+            f"VIN: {self.vin_var.get().strip() or '(missing)'}",
+            f"Output: {mode_names.get(self.mode_var.get(), self.mode_var.get())}",
+            f"Template: {self.template_var.get()}",
+            f"Folder: {self.output_var.get()}",
+        ]
+        if self.mode_var.get() == "single":
+            lines.insert(2, f"App ID: {self.custom_appid_var.get().strip() or self.appid_var.get()}")
+        box = tk.Text(
+            self.step_body,
+            height=9,
+            wrap="word",
+            font=("Consolas", 10),
+            bg="#0f172a",
+            fg="#e5e7eb",
+            relief="flat",
+            padx=10,
+            pady=10,
+        )
+        box.pack(fill="both", expand=True, pady=(14, 0))
+        box.insert("1.0", "\n".join(lines))
+        box.configure(state="disabled")
+
+    def _next_step(self) -> None:
+        if self.wizard_step == 0:
+            try:
+                validate_vin(self.vin_var.get())
+            except Exception as exc:
+                messagebox.showerror("Check VIN", str(exc))
+                return
+        if self.wizard_step >= 3:
+            self.generate()
+            return
+        self.wizard_step += 1
+        self._render_step()
+
+    def _previous_step(self) -> None:
+        self.wizard_step -= 1
+        self._render_step()
 
     def _build_results(self, parent: ttk.Frame) -> None:
         ttk.Label(parent, text="Result", style="Section.TLabel").grid(row=0, column=0, sticky="w")
@@ -288,8 +333,10 @@ class EasyFscApp(tk.Tk):
     def _sync_mode(self) -> None:
         mode = self.mode_var.get()
         state = "normal" if mode == "single" else "disabled"
-        self.appid_combo.configure(state="readonly" if state == "normal" else "disabled")
-        self.custom_entry.configure(state=state)
+        if hasattr(self, "appid_combo") and self.appid_combo.winfo_exists():
+            self.appid_combo.configure(state="readonly" if state == "normal" else "disabled")
+        if hasattr(self, "custom_entry") and self.custom_entry.winfo_exists():
+            self.custom_entry.configure(state=state)
         hints = {
             "single": "Creates one .fsc file using the selected App ID.",
             "all": "Creates a VIN folder containing the original 21 App IDs.",
