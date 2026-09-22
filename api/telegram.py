@@ -16,7 +16,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from fsc_core import ALL_APPIDS, DEFAULT_APPID, build_fsc, load_template, parse_appid, validate_vin
+from fsc_core import (
+    ALL_APPIDS,
+    APP_VERSION,
+    APP_VERSION_NAME,
+    DEFAULT_APPID,
+    build_fsc,
+    load_template,
+    parse_appid,
+    validate_vin,
+)
 
 
 BOT_TOKEN_ENV = "TELEGRAM_BOT_TOKEN"
@@ -99,6 +108,7 @@ def _send_document(chat_id: int, filename: str, content: bytes, caption: str) ->
 def _help_text() -> str:
     return (
         "Easy FSC E3 Bot\n\n"
+        f"Version {APP_VERSION} - {APP_VERSION_NAME}\n"
         "Created by https://t.me/imkadi\n"
         "Free use only. Not for resale.\n\n"
         "Send your 7-character VIN, for example:\n"
@@ -137,6 +147,7 @@ def _main_keyboard() -> dict:
 def _short_start_text() -> str:
     return (
         "Easy FSC E3 Bot\n"
+        f"v{APP_VERSION} - {APP_VERSION_NAME}\n"
         "Free use only. Created by https://t.me/imkadi\n\n"
         "Tap Generate FSC ZIP, then send your 7-character VIN."
     )
@@ -243,6 +254,8 @@ class handler(BaseHTTPRequestHandler):
                 "telegram_webhook_secret_configured": bool(os.environ.get(WEBHOOK_SECRET_ENV)),
                 "fsc_bot_mode_configured": os.environ.get(OUTPUT_MODE_ENV, "zip"),
                 "fsc_bot_mode_effective": _bot_mode(),
+                "version": APP_VERSION,
+                "version_name": APP_VERSION_NAME,
             },
         )
 

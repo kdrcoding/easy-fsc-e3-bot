@@ -11,6 +11,8 @@ from tkinter import filedialog, messagebox, ttk
 from fsc_core import (
     ALL_APPIDS,
     APPID_LABELS,
+    APP_VERSION,
+    APP_VERSION_NAME,
     DEFAULT_APPID,
     SIGNATURE_LEN,
     build_fsc,
@@ -45,7 +47,7 @@ This app is an independent utility and is not endorsed by, sponsored by, or affi
 class EasyFscApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Easy FSC E3")
+        self.title(f"Easy FSC E3 v{APP_VERSION}")
         self.geometry("980x760")
         self.minsize(900, 700)
 
@@ -97,7 +99,10 @@ class EasyFscApp(tk.Tk):
 
         header = ttk.Frame(outer)
         header.pack(fill="x", pady=(0, 14))
-        ttk.Label(header, text="Easy FSC E3", style="Title.TLabel").pack(side="left")
+        title_box = ttk.Frame(header)
+        title_box.pack(side="left")
+        ttk.Label(title_box, text=f"Easy FSC E3 v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text=APP_VERSION_NAME).pack(anchor="w")
         ttk.Button(header, text="Open Output Folder", command=self._open_output_folder).pack(side="right")
         ttk.Button(
             header,
@@ -385,7 +390,7 @@ class EasyFscApp(tk.Tk):
     def _show_about(self) -> None:
         messagebox.showinfo(
             "About Easy FSC E3",
-            f"Easy FSC E3\n\nCreated by: {CREATOR_LINK}\nFree use only, not for resale.",
+            f"Easy FSC E3 v{APP_VERSION}\n{APP_VERSION_NAME}\n\nCreated by: {CREATOR_LINK}\nFree use only, not for resale.",
         )
 
     def _clear(self) -> None:

@@ -1,6 +1,9 @@
 Easy FSC E3
 ============
 
+Version:
+  1.0.1 - Original-match verified
+
 Created by:
   https://t.me/imkadi
 

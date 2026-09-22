@@ -4,6 +4,7 @@ output/
 verify/
 compare_old_new/
 compare_onedrive_original/
+compare_version_check/
 __pycache__/
 .vercel/
 *.pyc
