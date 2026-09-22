@@ -1,5 +1,8 @@
 {
   "functions": {
+    "api/check_bot.py": {
+      "maxDuration": 20
+    },
     "api/ping.py": {
       "maxDuration": 10
     },
