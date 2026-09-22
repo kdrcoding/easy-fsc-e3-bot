@@ -7,6 +7,7 @@ compare_onedrive_original/
 compare_version_check/
 compare_help_check/
 compare_final_bugcheck/
+compare_v102_check/
 __pycache__/
 .vercel/
 *.pyc

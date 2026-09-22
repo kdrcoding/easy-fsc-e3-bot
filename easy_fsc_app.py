@@ -93,6 +93,43 @@ class EasyFscApp(tk.Tk):
         style.configure("TCheckbutton", background="#ffffff", foreground="#1f2937")
         style.configure("TCombobox", padding=6)
 
+    def _button(
+        self,
+        parent,
+        text: str,
+        command,
+        variant: str = "secondary",
+        height: int = 38,
+    ) -> tk.Button:
+        palettes = {
+            "primary": ("#2563eb", "#1d4ed8", "#ffffff"),
+            "secondary": ("#e2e8f0", "#cbd5e1", "#0f172a"),
+            "quiet": ("#ffffff", "#f1f5f9", "#334155"),
+            "danger": ("#fee2e2", "#fecaca", "#991b1b"),
+        }
+        bg, hover, fg = palettes[variant]
+        button = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=bg,
+            fg=fg,
+            activebackground=hover,
+            activeforeground=fg,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            font=("Segoe UI", 11, "bold" if variant == "primary" else "normal"),
+            height=1,
+            padx=12,
+            pady=8,
+        )
+        button.configure(highlightthickness=1, highlightbackground="#cbd5e1")
+        button.bind("<Enter>", lambda _event: button.configure(bg=hover))
+        button.bind("<Leave>", lambda _event: button.configure(bg=bg))
+        button.configure(width=max(1, height // 4))
+        return button
+
     def _build_menu(self) -> None:
         menu = tk.Menu(self)
         help_menu = tk.Menu(menu, tearoff=0)
@@ -112,8 +149,8 @@ class EasyFscApp(tk.Tk):
         title_box.pack(side="left")
         ttk.Label(title_box, text=f"Easy FSC E3 v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text=f"{APP_VERSION_NAME} | Same FSC output as original", style="Subtitle.TLabel").pack(anchor="w")
-        ttk.Button(header, text="Open Output Folder", command=self._open_output_folder).pack(side="right")
-        ttk.Button(header, text="Feature Guide", command=self._show_feature_guide).pack(side="right", padx=(0, 10))
+        self._button(header, "Open Output Folder", self._open_output_folder, "secondary").pack(side="right")
+        self._button(header, "Feature Guide", self._show_feature_guide, "quiet").pack(side="right", padx=(0, 10))
 
         main = ttk.Frame(outer)
         main.pack(fill="both", expand=True)
@@ -163,17 +200,17 @@ class EasyFscApp(tk.Tk):
         actions.grid(row=1, column=0, columnspan=2, sticky="ew")
         actions.columnconfigure((0, 1), weight=1)
 
-        self.back_button = ttk.Button(actions, text="Back", command=self._previous_step)
+        self.back_button = self._button(actions, "Back", self._previous_step, "secondary")
         self.back_button.grid(row=0, column=0, sticky="ew", padx=(0, 6))
-        self.next_button = ttk.Button(actions, text="Next", style="Primary.TButton", command=self._next_step)
+        self.next_button = self._button(actions, "Next", self._next_step, "primary")
         self.next_button.grid(row=0, column=1, sticky="ew", padx=(6, 0))
 
         secondary = ttk.Frame(actions, style="Actions.TFrame")
         secondary.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         secondary.columnconfigure((0, 1, 2), weight=1)
-        ttk.Button(secondary, text="Guide", command=self._show_feature_guide).grid(row=0, column=0, sticky="ew", padx=(0, 5))
-        ttk.Button(secondary, text="Legal", command=self._show_legal_notice).grid(row=0, column=1, sticky="ew", padx=5)
-        ttk.Button(secondary, text="Clear", command=self._clear).grid(row=0, column=2, sticky="ew", padx=(5, 0))
+        self._button(secondary, "Guide", self._show_feature_guide, "quiet").grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        self._button(secondary, "Legal", self._show_legal_notice, "quiet").grid(row=0, column=1, sticky="ew", padx=5)
+        self._button(secondary, "Clear", self._clear, "danger").grid(row=0, column=2, sticky="ew", padx=(5, 0))
         self._render_step()
 
     def _clear_step(self) -> None:
@@ -190,7 +227,9 @@ class EasyFscApp(tk.Tk):
         )
         self.wizard_step = max(0, min(self.wizard_step, len(renderers) - 1))
         renderers[self.wizard_step]()
-        self.back_button.configure(state="disabled" if self.wizard_step == 0 else "normal")
+        back_disabled = self.wizard_step == 0
+        self.back_button.configure(state="disabled" if back_disabled else "normal")
+        self.back_button.configure(bg="#f1f5f9" if back_disabled else "#e2e8f0")
         self.next_button.configure(text="Generate FSC Files" if self.wizard_step == len(renderers) - 1 else "Next")
 
     def _render_vin_step(self) -> None:
@@ -241,9 +280,13 @@ class EasyFscApp(tk.Tk):
     def _render_files_step(self) -> None:
         self.step_title_var.set("3. Files and Folder")
         self.step_hint_var.set("The built-in template is already selected. Choose an output folder if you want a different location.")
-        ttk.Button(self.step_body, text="Optional Custom Template", command=self._choose_template).pack(fill="x", pady=(14, 5))
+        self._button(self.step_body, "Optional Custom Template", self._choose_template, "secondary").pack(
+            fill="x", pady=(14, 5)
+        )
         ttk.Label(self.step_body, textvariable=self.template_var, style="Hint.TLabel", wraplength=310).pack(anchor="w")
-        ttk.Button(self.step_body, text="Choose Output Folder...", command=self._choose_output_dir).pack(fill="x", pady=(18, 5))
+        self._button(self.step_body, "Choose Output Folder...", self._choose_output_dir, "secondary").pack(
+            fill="x", pady=(18, 5)
+        )
         ttk.Label(self.step_body, textvariable=self.output_var, style="Hint.TLabel", wraplength=310).pack(anchor="w")
 
     def _render_review_step(self) -> None:

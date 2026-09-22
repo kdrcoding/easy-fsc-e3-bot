@@ -2,7 +2,8 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.1 - Original-match verified
+  1.0.2 - Wizard UI verified
+  FSC output remains original-match verified.
 
 Created by:
   https://t.me/imkadi
