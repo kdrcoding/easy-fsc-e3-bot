@@ -31,7 +31,7 @@ from fsc_core import (
     parse_appid,
     validate_vin,
 )
-from supabase_helpers import get_stats, log_generation, supabase_configured
+from supabase_helpers import get_consent, get_stats, log_generation, set_consent, supabase_configured
 
 
 BOT_TOKEN_ENV = "TELEGRAM_BOT_TOKEN"
@@ -40,6 +40,11 @@ OUTPUT_MODE_ENV = "FSC_BOT_MODE"
 APPID_ENV = "FSC_BOT_APPID"
 ADMIN_CHAT_ID_ENV = "TELEGRAM_ADMIN_CHAT_ID"
 ADMIN_DM_LOGS_ENV = "TELEGRAM_ADMIN_DM_LOGS"
+
+TERMS_URL = "https://easy-fsc-e3-bot.vercel.app/terms.html"
+PRIVACY_URL = "https://easy-fsc-e3-bot.vercel.app/privacy.html"
+CALLBACK_ACCEPT = "consent:accept"
+CALLBACK_DECLINE = "consent:decline"
 
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, body: dict) -> None:
@@ -113,6 +118,24 @@ def _send_document(chat_id: int, filename: str, content: bytes, caption: str) ->
     )
 
 
+def _edit_message_text(chat_id: int, message_id: int, text: str) -> None:
+    fields = {
+        "chat_id": str(chat_id),
+        "message_id": str(message_id),
+        "text": text,
+        "disable_web_page_preview": "true",
+    }
+    _telegram_api("editMessageText", fields)
+
+
+def _answer_callback(callback_query_id: str, text: str) -> None:
+    fields = {
+        "callback_query_id": callback_query_id,
+        "text": text,
+    }
+    _telegram_api("answerCallbackQuery", fields)
+
+
 def _admin_chat_id() -> int | None:
     value = os.environ.get(ADMIN_CHAT_ID_ENV, "").strip()
     if not value:
@@ -174,8 +197,103 @@ def _legal_text() -> str:
         "incorrect use, service interruption, or account problems, the creator is not responsible.\n\n"
         "This bot is provided as-is with no warranty and no official affiliation with any vehicle manufacturer, dealer, "
         "software vendor, platform provider, or third party.\n\n"
-        "Terms: https://easy-fsc-e3-bot.vercel.app/terms.html"
+        f"Terms: {TERMS_URL}\n"
+        f"Privacy Policy: {PRIVACY_URL}"
     )
+
+
+_CONSENT_MEM: set[int] = set()
+
+
+def _terms_summary_text() -> str:
+    return (
+        "Welcome to Easy FSC E3 Bot!\n\n"
+        f"v{APP_VERSION} - {APP_VERSION_NAME}\n"
+        "Created by https://t.me/imkadi\n"
+        "Free use only. Not for resale.\n\n"
+        "Before generating any FSC files you must review and accept the\n"
+        "Terms & Conditions and the Privacy Policy.\n\n"
+        "By accepting you confirm:\n"
+        "- You use the bot only with systems, vehicles, files, and data that you own or have permission to service.\n"
+        "- You are responsible for following all laws, contracts, warranties, and local regulations.\n"
+        "- You use any generated files at your own risk.\n\n"
+        "Data note:\n"
+        "- The bot stores your Telegram user ID, your consent time, and (if stats are enabled) the VINs you generate.\n"
+        "Read the links below, then tap Accept to continue."
+    )
+
+
+def _consent_keyboard() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "Terms & Conditions", "url": TERMS_URL}],
+            [{"text": "Privacy Policy", "url": PRIVACY_URL}],
+            [
+                {"text": "Accept", "callback_data": CALLBACK_ACCEPT},
+                {"text": "Decline", "callback_data": CALLBACK_DECLINE},
+            ],
+        ]
+    }
+
+
+def _send_consent_prompt(chat_id: int) -> None:
+    _send_message(chat_id, _terms_summary_text(), _consent_keyboard())
+
+
+def _is_consented(chat_id: int) -> bool:
+    if chat_id in _CONSENT_MEM:
+        return True
+    try:
+        accepted = get_consent(chat_id)
+    except Exception:
+        accepted = None
+    if accepted:
+        _CONSENT_MEM.add(chat_id)
+        return True
+    return False
+
+
+def _record_consent(chat_id: int) -> None:
+    _CONSENT_MEM.add(chat_id)
+    if not supabase_configured():
+        return
+    try:
+        set_consent(chat_id, APP_VERSION)
+    except Exception as exc:
+        print(f"Supabase consent write failed: {exc}", file=sys.stderr)
+
+
+def _handle_callback(callback: dict) -> None:
+    data = callback.get("data") or ""
+    callback_id = callback.get("id")
+    message = callback.get("message") or {}
+    chat_id = (message.get("chat") or {}).get("id")
+    user_id = (callback.get("from") or {}).get("id")
+    subject_id = user_id or chat_id
+    if not callback_id or not chat_id or not subject_id:
+        return
+
+    if data == CALLBACK_ACCEPT:
+        _record_consent(subject_id)
+        _answer_callback(callback_id, "Accepted. Thank you!")
+        _edit_message_text(
+            chat_id,
+            message.get("message_id"),
+            f"Accepted - Terms & Privacy confirmed (v{APP_VERSION}).\n\n",
+        )
+        _send_message(chat_id, _short_start_text(), _main_keyboard())
+        return
+
+    if data == CALLBACK_DECLINE:
+        _answer_callback(callback_id, "You declined.")
+        _edit_message_text(
+            chat_id,
+            message.get("message_id"),
+            "You declined the Terms & Privacy.\n\n"
+            "The bot needs your acceptance before it can generate FSC files.\n\n"
+            "Send /start to review them again whenever you are ready.",
+        )
+        return
 
 
 def _main_keyboard() -> dict:
@@ -223,6 +341,11 @@ def _build_single(vin_text: str) -> tuple[str, bytes]:
 
 
 def _handle_update(update: dict) -> None:
+    callback = update.get("callback_query")
+    if callback:
+        _handle_callback(callback)
+        return
+
     message = update.get("message") or update.get("edited_message")
     if not message:
         return
@@ -236,7 +359,10 @@ def _handle_update(update: dict) -> None:
     normalized_text = text.lower()
 
     if not text or normalized_text == "/start":
-        _send_message(chat_id, _short_start_text(), _main_keyboard())
+        if _is_consented(chat_id):
+            _send_message(chat_id, _short_start_text(), _main_keyboard())
+        else:
+            _send_consent_prompt(chat_id)
         return
 
     if normalized_text in {"/admin", "admin", "/stats", "stats"}:
@@ -267,6 +393,10 @@ def _handle_update(update: dict) -> None:
             ),
             _main_keyboard(),
         )
+        return
+
+    if not _is_consented(chat_id):
+        _send_consent_prompt(chat_id)
         return
 
     if normalized_text in {"/help", "help"}:

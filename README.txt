@@ -2,13 +2,21 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.4 - Detailed stats view
+  1.0.5 - Terms & privacy consent
   FSC output remains original-match verified.
 
 Created by:
   https://t.me/imkadi
 
 Free use only. Not for resale.
+
+Bot consent:
+  When a user starts the bot, they must review and accept the Terms &
+  Conditions and the Privacy Policy before generating FSC files.
+    Terms:   https://easy-fsc-e3-bot.vercel.app/terms.html
+    Privacy: https://easy-fsc-e3-bot.vercel.app/privacy.html
+  Acceptance is stored in the user_consents table when Supabase is
+  configured; otherwise it is kept for the current bot session only.
 
 Run:
   Double-click run_easy_fsc.bat

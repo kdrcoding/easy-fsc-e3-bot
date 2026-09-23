@@ -8,6 +8,12 @@ create table if not exists public.fsc_generation_logs (
   user_chat_id text not null
 );
 
+create table if not exists public.user_consents (
+  user_chat_id text primary key,
+  accepted_at timestamptz not null default now(),
+  accepted_version text not null default '1.0.5'
+);
+
 create index if not exists fsc_generation_logs_created_at_idx
   on public.fsc_generation_logs (created_at desc);
 

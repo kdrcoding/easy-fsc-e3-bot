@@ -2,8 +2,11 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.4 - Detailed stats view
+  1.0.5 - Terms & privacy consent
   FSC output remains original-match verified.
+
+Privacy Policy:
+  https://easy-fsc-e3-bot.vercel.app/privacy.html
 
 Created by:
   https://t.me/imkadi

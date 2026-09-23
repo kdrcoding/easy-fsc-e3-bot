@@ -13,6 +13,7 @@ SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY"
 SUPABASE_LOG_TABLE = "fsc_generation_logs"
 SUPABASE_STATS_VIEW = "fsc_generation_stats"
 SUPABASE_DAILY_STATS_VIEW = "fsc_generation_daily_stats"
+SUPABASE_CONSENT_TABLE = "user_consents"
 
 
 def _config() -> tuple[str, str] | None:
@@ -30,7 +31,12 @@ def supabase_configured() -> bool:
     return _config() is not None
 
 
-def _request(path: str, method: str = "GET", body: dict | None = None) -> tuple[int, bytes]:
+def _request(
+    path: str,
+    method: str = "GET",
+    body: dict | None = None,
+    prefer: str | None = None,
+) -> tuple[int, bytes]:
     config = _config()
     if not config:
         raise RuntimeError("Supabase is not configured")
@@ -40,7 +46,9 @@ def _request(path: str, method: str = "GET", body: dict | None = None) -> tuple[
     request.add_header("apikey", key)
     request.add_header("Authorization", f"Bearer {key}")
     request.add_header("Content-Type", "application/json")
-    if method == "POST":
+    if prefer:
+        request.add_header("Prefer", prefer)
+    elif method == "POST":
         request.add_header("Prefer", "return=minimal")
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
@@ -64,6 +72,38 @@ def _get_json(path: str):
             f"Response preview: {preview!r}. "
             "Use SUPABASE_SERVICE_ROLE_KEY from Supabase Project Settings > API/API Keys."
         ) from exc
+
+
+def get_consent(user_chat_id: int) -> str | None:
+    if not supabase_configured():
+        return None
+    query = urllib.parse.urlencode(
+        {
+            "select": "accepted_at",
+            "user_chat_id": f"eq.{user_chat_id}",
+            "limit": "1",
+        }
+    )
+    rows = _get_json(f"{SUPABASE_CONSENT_TABLE}?{query}")
+    if not rows:
+        return None
+    return rows[0].get("accepted_at")
+
+
+def set_consent(user_chat_id: int, accepted_version: str) -> bool:
+    if not supabase_configured():
+        return False
+    payload = {
+        "user_chat_id": str(user_chat_id),
+        "accepted_version": accepted_version,
+    }
+    _request(
+        SUPABASE_CONSENT_TABLE,
+        method="POST",
+        body=payload,
+        prefer="resolution=merge-duplicates,return=minimal",
+    )
+    return True
 
 
 def log_generation(
