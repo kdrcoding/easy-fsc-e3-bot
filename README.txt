@@ -2,7 +2,7 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.6 - 1-minute generation limit
+  1.1.0 - Re-consent on new terms; admin error reports; daily cap
   FSC output remains original-match verified.
 
 Created by:
@@ -15,6 +15,11 @@ Rate limit:
   the FSC_RATE_LIMIT_SECONDS environment variable, default 60).
   Rate limit events are stored in the fsc_rate_limits table when
   Supabase is configured; otherwise enforced per bot instance.
+
+Daily limit:
+  Each user can generate at most FSC_DAILY_LIMIT files per day
+  (default 10). Daily usage is stored in the fsc_daily_usage table
+  (one row per user per day, in UTC).
 
 Bot consent:
   When a user starts the bot, they must review and accept the Terms &

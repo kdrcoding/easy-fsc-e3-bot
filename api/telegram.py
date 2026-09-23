@@ -6,6 +6,7 @@ import math
 import os
 import sys
 import time
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -35,9 +36,11 @@ from fsc_core import (
 )
 from supabase_helpers import (
     get_consent,
+    get_daily_count,
     get_rate_limit_wait,
     get_stats,
     log_generation,
+    record_daily_usage,
     record_rate_limit,
     set_consent,
     supabase_configured,
@@ -51,6 +54,7 @@ APPID_ENV = "FSC_BOT_APPID"
 ADMIN_CHAT_ID_ENV = "TELEGRAM_ADMIN_CHAT_ID"
 ADMIN_DM_LOGS_ENV = "TELEGRAM_ADMIN_DM_LOGS"
 RATE_LIMIT_SECONDS_ENV = "FSC_RATE_LIMIT_SECONDS"
+DAILY_LIMIT_ENV = "FSC_DAILY_LIMIT"
 
 TERMS_URL = "https://easy-fsc-e3-bot.vercel.app/terms.html"
 PRIVACY_URL = "https://easy-fsc-e3-bot.vercel.app/privacy.html"
@@ -185,6 +189,27 @@ def _notify_admin(user_chat_id: int, vin: str, mode: str, file_count: int, filen
     )
 
 
+def _notify_admin_error(user_chat_id: int, input_text: str, exc: Exception) -> None:
+    admin_chat_id = _admin_chat_id()
+    if not admin_chat_id:
+        return
+    detail = traceback.format_exc(limit=6).strip()
+    if len(detail) > 3000:
+        detail = detail[-3000:]
+    _send_message(
+        admin_chat_id,
+        "\n".join(
+            [
+                "Admin Log - FSC Generation Error",
+                f"User chat ID: {user_chat_id}",
+                f"Input: {input_text}",
+                f"Error: {exc!r}",
+                f"Traceback:\n{detail}",
+            ]
+        ),
+    )
+
+
 def _help_text() -> str:
     return (
         "Easy FSC E3 Bot\n\n"
@@ -195,7 +220,7 @@ def _help_text() -> str:
         "TEST123\n\n"
         "The bot will generate FSC files and send them back as a ZIP.\n"
         "ZIP mode includes 1CR Remote Start App IDs 017C and 0180.\n\n"
-        "Rate limit: 1 generation per minute."
+        f"Limits: 1 generation per minute, up to {_daily_limit()} per day."
     )
 
 
@@ -256,10 +281,10 @@ def _is_consented(chat_id: int) -> bool:
     if chat_id in _CONSENT_MEM:
         return True
     try:
-        accepted = get_consent(chat_id)
+        accepted_version = get_consent(chat_id)
     except Exception:
-        accepted = None
-    if accepted:
+        accepted_version = None
+    if accepted_version == APP_VERSION:
         _CONSENT_MEM.add(chat_id)
         return True
     return False
@@ -308,6 +333,50 @@ def _record_rate(subject_id: int) -> None:
         record_rate_limit(subject_id)
     except Exception as exc:
         print(f"Supabase rate write failed: {exc}", file=sys.stderr)
+
+
+_DAILY_MEM: dict[int, tuple[str, int]] = {}
+
+
+def _daily_limit() -> int:
+    try:
+        value = int(os.environ.get(DAILY_LIMIT_ENV, "10"))
+    except ValueError:
+        value = 10
+    return max(1, value)
+
+
+def _utc_date() -> str:
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def _daily_used(subject_id: int) -> int:
+    today = _utc_date()
+    mem = _DAILY_MEM.get(subject_id)
+    if mem and mem[0] == today:
+        return mem[1]
+    if not supabase_configured():
+        return 0
+    try:
+        return get_daily_count(subject_id)
+    except Exception:
+        return 0
+
+
+def _daily_remaining(subject_id: int) -> int:
+    return max(0, _daily_limit() - _daily_used(subject_id))
+
+
+def _record_daily(subject_id: int) -> None:
+    today = _utc_date()
+    used = _daily_used(subject_id) + 1
+    _DAILY_MEM[subject_id] = (today, used)
+    if not supabase_configured():
+        return
+    try:
+        record_daily_usage(subject_id, today, used)
+    except Exception as exc:
+        print(f"Supabase daily write failed: {exc}", file=sys.stderr)
 
 
 def _handle_callback(callback: dict) -> None:
@@ -500,7 +569,17 @@ def _handle_update(update: dict) -> None:
             _main_keyboard(),
         )
         return
+    if _daily_remaining(subject_id) <= 0:
+        _send_message(
+            chat_id,
+            f"Daily limit reached: {_daily_limit()} generations per day.\n"
+            "Try again tomorrow.\n\n"
+            "Created by https://t.me/imkadi. Free use only, not for resale.",
+            _main_keyboard(),
+        )
+        return
     _record_rate(subject_id)
+    _record_daily(subject_id)
 
     try:
         mode = _bot_mode()
@@ -537,9 +616,9 @@ def _handle_update(update: dict) -> None:
             except Exception as exc:
                 print(f"Supabase log failed: {exc}", file=sys.stderr)
             _notify_admin(chat_id, vin, "zip", len(ALL_APPIDS), filename)
-    except Exception:
+    except Exception as exc:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")
-        raise
+        _notify_admin_error(subject_id, text, exc)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -554,6 +633,8 @@ class handler(BaseHTTPRequestHandler):
                 "telegram_webhook_secret_configured": bool(os.environ.get(WEBHOOK_SECRET_ENV)),
                 "fsc_bot_mode_configured": os.environ.get(OUTPUT_MODE_ENV, "zip"),
                 "fsc_bot_mode_effective": _bot_mode(),
+                "fsc_rate_limit_seconds": _rate_limit_seconds(),
+                "fsc_daily_limit": _daily_limit(),
                 "version": APP_VERSION,
                 "version_name": APP_VERSION_NAME,
                 "admin_reader_configured": bool(_admin_chat_id()),

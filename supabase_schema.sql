@@ -11,12 +11,18 @@ create table if not exists public.fsc_generation_logs (
 create table if not exists public.user_consents (
   user_chat_id text primary key,
   accepted_at timestamptz not null default now(),
-  accepted_version text not null default '1.0.6'
+  accepted_version text not null default '1.1.0'
 );
 
 create table if not exists public.fsc_rate_limits (
   user_chat_id text primary key,
   last_generated_at timestamptz not null default now()
+);
+
+create table if not exists public.fsc_daily_usage (
+  user_chat_id text primary key,
+  used_on date not null default (current_date at time zone 'utc'),
+  count integer not null default 0
 );
 
 create index if not exists fsc_generation_logs_created_at_idx

@@ -15,6 +15,7 @@ SUPABASE_STATS_VIEW = "fsc_generation_stats"
 SUPABASE_DAILY_STATS_VIEW = "fsc_generation_daily_stats"
 SUPABASE_CONSENT_TABLE = "user_consents"
 SUPABASE_RATE_TABLE = "fsc_rate_limits"
+SUPABASE_DAILY_TABLE = "fsc_daily_usage"
 
 
 def _config() -> tuple[str, str] | None:
@@ -80,7 +81,7 @@ def get_consent(user_chat_id: int) -> str | None:
         return None
     query = urllib.parse.urlencode(
         {
-            "select": "accepted_at",
+            "select": "accepted_version",
             "user_chat_id": f"eq.{user_chat_id}",
             "limit": "1",
         }
@@ -88,7 +89,7 @@ def get_consent(user_chat_id: int) -> str | None:
     rows = _get_json(f"{SUPABASE_CONSENT_TABLE}?{query}")
     if not rows:
         return None
-    return rows[0].get("accepted_at")
+    return rows[0].get("accepted_version")
 
 
 def set_consent(user_chat_id: int, accepted_version: str) -> bool:
@@ -142,6 +143,41 @@ def record_rate_limit(user_chat_id: int) -> bool:
     }
     _request(
         SUPABASE_RATE_TABLE,
+        method="POST",
+        body=payload,
+        prefer="resolution=merge-duplicates,return=minimal",
+    )
+    return True
+
+
+def get_daily_count(user_chat_id: int) -> int:
+    from datetime import datetime, timezone
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    query = urllib.parse.urlencode(
+        {
+            "select": "count",
+            "user_chat_id": f"eq.{user_chat_id}",
+            "used_on": f"eq.{today}",
+            "limit": "1",
+        }
+    )
+    rows = _get_json(f"{SUPABASE_DAILY_TABLE}?{query}")
+    if not rows:
+        return 0
+    return int(rows[0].get("count") or 0)
+
+
+def record_daily_usage(user_chat_id: int, used_on: str, count: int) -> bool:
+    if not supabase_configured():
+        return False
+    payload = {
+        "user_chat_id": str(user_chat_id),
+        "used_on": used_on,
+        "count": count,
+    }
+    _request(
+        SUPABASE_DAILY_TABLE,
         method="POST",
         body=payload,
         prefer="resolution=merge-duplicates,return=minimal",

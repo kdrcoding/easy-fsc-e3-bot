@@ -1,0 +1,139 @@
+Easy FSC E3 Bot - DEPLOYMENT (v1.1.0)
+======================================
+
+Three steps: (1) create the Supabase tables, (2) set Vercel environment
+variables, (3) set the Telegram webhook.
+
+---------------------------------------------------------------------
+STEP 1 - SUPABASE
+---------------------------------------------------------------------
+Open your Supabase project -> SQL Editor -> New query, paste ALL of the
+SQL below (or the full contents of supabase_schema.sql in this repo),
+then click Run.
+
+create table if not exists public.fsc_generation_logs (
+  id bigserial primary key,
+  created_at timestamptz not null default now(),
+  vin text not null,
+  mode text not null,
+  file_count integer not null,
+  sent_filename text not null,
+  user_chat_id text not null
+);
+
+create table if not exists public.user_consents (
+  user_chat_id text primary key,
+  accepted_at timestamptz not null default now(),
+  accepted_version text not null default '1.1.0'
+);
+
+create table if not exists public.fsc_rate_limits (
+  user_chat_id text primary key,
+  last_generated_at timestamptz not null default now()
+);
+
+create table if not exists public.fsc_daily_usage (
+  user_chat_id text primary key,
+  used_on date not null default (current_date at time zone 'utc'),
+  count integer not null default 0
+);
+
+create index if not exists fsc_generation_logs_created_at_idx
+  on public.fsc_generation_logs (created_at desc);
+
+create or replace view public.fsc_generation_stats
+with (security_invoker = true) as
+select
+  count(*)::integer as total_requests,
+  coalesce(sum(file_count), 0)::integer as total_fsc_files,
+  count(distinct user_chat_id)::integer as unique_users,
+  count(*) filter (where mode = 'zip')::integer as zip_requests,
+  count(*) filter (where mode = 'single')::integer as single_requests,
+  max(created_at) as last_generated_at
+from public.fsc_generation_logs;
+
+create or replace view public.fsc_generation_daily_stats
+with (security_invoker = true) as
+select
+  created_at::date as day,
+  count(*)::integer as requests,
+  coalesce(sum(file_count), 0)::integer as fsc_files,
+  count(distinct user_chat_id)::integer as unique_users
+from public.fsc_generation_logs
+group by created_at::date;
+
+Note: Supabase REST (PostgREST) reads these tables/views. No grants are
+needed because the service role key bypasses RLS. If you added RLS, add:
+
+alter table public.fsc_generation_logs enable row level security;
+alter table public.user_consents enable row level security;
+alter table public.fsc_rate_limits enable row level security;
+alter table public.fsc_daily_usage enable row level security;
+
+---------------------------------------------------------------------
+STEP 2 - VERCEL ENVIRONMENT VARIABLES
+---------------------------------------------------------------------
+In the Vercel project settings (Settings -> Environment Variables), set:
+
+  TELEGRAM_BOT_TOKEN
+      The bot token from @BotFather.
+      Example: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+
+  TELEGRAM_WEBHOOK_SECRET
+      Any random string (use one per deployment). It is verified on
+      every Telegram webhook call. Example: vercel-2026-secret-1
+
+  FSC_BOT_MODE
+      zip or single (default zip).
+
+  FSC_BOT_APPID
+      Only used in single mode. Hex value such as 017C (default 017C).
+
+  TELEGRAM_ADMIN_CHAT_ID
+      Your Telegram numeric user id. Required for admin stats (/stats),
+      admin generation logs, and error reports.
+      Get it from @userinfobot, e.g. 123456789
+
+  TELEGRAM_ADMIN_DM_LOGS
+      Set to true to receive a DM for every successful generation.
+
+  FSC_RATE_LIMIT_SECONDS
+      Seconds between generations per user (default 60).
+
+  FSC_DAILY_LIMIT
+      Max generations per user per day (default 10).
+
+  SUPABASE_URL
+      From Supabase Project Settings -> API -> Project URL.
+      Example: https://abcdefghijklm.supabase.co
+
+  SUPABASE_SERVICE_ROLE_KEY
+      From Supabase Project Settings -> API -> service_role secret.
+      This key is used for consent, rate/daily storage, statistics, and
+      generation logs. Keep it secret; only set it as a Vercel
+      environment variable.
+
+Redeploy the latest commit on Vercel after setting these.
+
+---------------------------------------------------------------------
+STEP 3 - TELEGRAM WEBHOOK
+---------------------------------------------------------------------
+Run once (PowerShell) so Telegram sends updates to Vercel:
+
+$token = "<YOUR_BOT_TOKEN>"
+$secret = "<YOUR_WEBHOOK_SECRET>"
+$url = "https://easy-fsc-e3-bot.vercel.app/telegram"
+Invoke-RestMethod -Method Post -ContentType "application/x-www-form-urlencoded" -Body "url=$url&secret_token=$secret" -Uri "https://api.telegram.org/bot$token/setWebhook"
+
+Verify with:
+Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/getWebhookInfo"
+Invoke-RestMethod -Uri "https://easy-fsc-e3-bot.vercel.app/api/ping"
+
+---------------------------------------------------------------------
+AFTER DEPLOY
+---------------------------------------------------------------------
+- Every user must re-accept the Terms & Privacy because the accepted
+  version is now 1.1.0 (version-gated consent).
+- Users are limited to 1 generation per minute and FSC_DAILY_LIMIT per
+  day.
+- Generation errors are DMed to TELEGRAM_ADMIN_CHAT_ID automatically.

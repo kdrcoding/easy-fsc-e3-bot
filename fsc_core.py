@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-APP_VERSION = "1.0.6"
-APP_VERSION_NAME = "1-minute generation limit"
+APP_VERSION = "1.1.0"
+APP_VERSION_NAME = "Admin errors, daily cap, re-consent"
 BODY_LEN = 0x3C
 SIGNATURE_LEN = 0x80
 VIN_OFFSET = 0x1A
@@ -211,7 +211,7 @@ class FscResult:
 
 
 def validate_vin(vin_text: str) -> bytes:
-    vin = vin_text.strip()
+    vin = vin_text.strip().upper()
     if len(vin) != VIN_LEN:
         raise ValueError(f"VIN must be exactly {VIN_LEN} letters or digits.")
     if not vin.isalnum():

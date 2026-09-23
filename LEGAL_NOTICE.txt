@@ -2,7 +2,7 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.6 - 1-minute generation limit
+  1.1.0 - Re-consent on new terms; admin error reports; daily cap
   FSC output remains original-match verified.
 
 Privacy Policy:
