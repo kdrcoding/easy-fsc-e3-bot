@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import io
 import json
 import math
@@ -11,6 +12,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
@@ -55,6 +57,7 @@ ADMIN_CHAT_ID_ENV = "TELEGRAM_ADMIN_CHAT_ID"
 ADMIN_DM_LOGS_ENV = "TELEGRAM_ADMIN_DM_LOGS"
 RATE_LIMIT_SECONDS_ENV = "FSC_RATE_LIMIT_SECONDS"
 DAILY_LIMIT_ENV = "FSC_DAILY_LIMIT"
+EXTRA_APPIDS_ENV = "FSC_BOT_APPIDS"
 
 TERMS_URL = "https://easy-fsc-e3-bot.vercel.app/terms.html"
 PRIVACY_URL = "https://easy-fsc-e3-bot.vercel.app/privacy.html"
@@ -450,21 +453,46 @@ def _bot_mode() -> str:
     return mode if mode in {"zip", "single"} else "zip"
 
 
-def _build_zip(vin_text: str) -> bytes:
+def _fsc_label(appid: int) -> str:
+    return f"{appid:04X}0001"
+
+
+def _effective_appids() -> list[int]:
+    appids = list(ALL_APPIDS)
+    raw = os.environ.get(EXTRA_APPIDS_ENV, "").strip()
+    if raw:
+        for part in raw.replace(";", ",").replace(" ", ",").split(","):
+            part = part.strip()
+            if not part:
+                continue
+            extra = parse_appid(part)
+            if extra is not None and extra not in appids:
+                appids.append(extra)
+    return appids
+
+
+def _zip_name(vin_text: str) -> str:
+    stamp = datetime.now().strftime("%d%m%Y_%H%M%S")
+    return f"FSC_{vin_text}_{stamp}.zip"
+
+
+def _build_zip(vin_text: str) -> tuple[str, bytes]:
     template = load_template()
     vin = validate_vin(vin_text)
     archive_buffer = io.BytesIO()
     with zipfile.ZipFile(archive_buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for appid in ALL_APPIDS:
+        for appid in _effective_appids():
             result = build_fsc(template, vin, appid)
-            archive.writestr(f"FSC_{vin_text}_{appid:04x}.fsc", result.data)
-    return archive_buffer.getvalue()
+            label = _fsc_label(appid)
+            archive.writestr(f"FSC_{vin_text}_{label}.fsc", result.data)
+            archive.writestr(f"{vin_text}_{label}.fsc", base64.b64encode(result.data))
+    return _zip_name(vin_text), archive_buffer.getvalue()
 
 
 def _build_single(vin_text: str) -> tuple[str, bytes]:
     appid = parse_appid(os.environ.get(APPID_ENV, f"{DEFAULT_APPID:04X}"))
     result = build_fsc(load_template(), validate_vin(vin_text), appid)
-    return f"FSC_{vin_text}_{appid:04x}.fsc", result.data
+    return f"FSC_{vin_text}_{_fsc_label(appid)}.fsc", result.data
 
 
 def _handle_update(update: dict) -> None:
@@ -623,26 +651,26 @@ def _handle_update(update: dict) -> None:
             except Exception as exc:
                 print(f"Admin DM log failed: {exc}", file=sys.stderr)
         else:
-            content = _build_zip(vin)
-            filename = f"FSC_{vin}_all.zip"
+            filename, content = _build_zip(vin)
+            file_count = len(_effective_appids())
             _send_document(
                 chat_id,
                 filename,
                 content,
-                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\n{remaining_line}Use only where authorized and at your own risk.",
+                f"Generated {file_count} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\n{remaining_line}Use only where authorized and at your own risk.",
             )
             try:
                 log_generation(
                     vin=vin,
                     mode="zip",
-                    file_count=len(ALL_APPIDS),
+                    file_count=file_count,
                     sent_filename=filename,
                     user_chat_id=chat_id,
                 )
             except Exception as exc:
                 print(f"Supabase log failed: {exc}", file=sys.stderr)
             try:
-                _notify_admin(chat_id, vin, "zip", len(ALL_APPIDS), filename)
+                _notify_admin(chat_id, vin, "zip", file_count, filename)
             except Exception as exc:
                 print(f"Admin DM log failed: {exc}", file=sys.stderr)
     except Exception as exc:

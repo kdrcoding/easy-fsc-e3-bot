@@ -94,6 +94,11 @@ In the Vercel project settings (Settings -> Environment Variables), set:
   FSC_BOT_APPID
       Only used in single mode. Hex value such as 017C (default 017C).
 
+  FSC_BOT_APPIDS
+      Optional extra App IDs to include in ZIP mode, comma-separated hex
+      values. Example: 009C,009E,009F,00A0,00DE,00A8
+      ZIP mode always includes the 21 original App IDs plus these extras.
+
   TELEGRAM_ADMIN_CHAT_ID
       Your Telegram numeric user id. Required for admin stats (/stats),
       admin generation logs, and error reports.
