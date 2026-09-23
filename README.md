@@ -11,6 +11,19 @@ Telegram bot that generates FSC (FSC-E3) files for your 7-character VINs — plu
 - Made by [https://t.me/imkadi](https://t.me/imkadi)
 - Free to use. Not for resale.
 
+### Bot in action
+
+<table>
+<tr>
+<td align="center"><b>Generate FSC ZIP</b></td>
+<td align="center"><b>Help & Stats</b></td>
+</tr>
+<tr>
+<td><img src="https://raw.githubusercontent.com/kdrcoding/easy-fsc-e3-bot/main/screenshot_bot_demo1.png" width="400"/></td>
+<td><img src="https://raw.githubusercontent.com/kdrcoding/easy-fsc-e3-bot/main/screenshot_bot_demo2.png" width="400"/></td>
+</tr>
+</table>
+
 ---
 
 ## What's new in 1.1.0
