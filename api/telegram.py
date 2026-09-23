@@ -587,6 +587,13 @@ def _handle_update(update: dict) -> None:
         return
     _record_rate(subject_id)
     _record_daily(subject_id)
+    remaining = _daily_limit() - _daily_used(subject_id)
+    if remaining > 1:
+        remaining_line = f"You have {remaining} generations left today.\n"
+    elif remaining == 1:
+        remaining_line = "You have 1 more generation left today.\n"
+    else:
+        remaining_line = "You have reached today's generation limit. Try again tomorrow.\n"
 
     try:
         mode = _bot_mode()
@@ -596,7 +603,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 filename,
                 content,
-                f"FSC generated for {vin}\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
+                f"FSC generated for {vin}\n{remaining_line}Created by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
             )
             try:
                 log_generation(vin=vin, mode="single", file_count=1, sent_filename=filename, user_chat_id=chat_id)
@@ -613,7 +620,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 filename,
                 content,
-                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\nCreated by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized and at your own risk.",
+                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\n{remaining_line}Created by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized and at your own risk.",
             )
             try:
                 log_generation(
