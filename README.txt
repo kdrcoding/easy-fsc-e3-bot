@@ -2,13 +2,19 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.5 - Terms & privacy consent
+  1.0.6 - 1-minute generation limit
   FSC output remains original-match verified.
 
 Created by:
   https://t.me/imkadi
 
 Free use only. Not for resale.
+
+Rate limit:
+  Each user can generate at most 1 FSC per minute (configurable via
+  the FSC_RATE_LIMIT_SECONDS environment variable, default 60).
+  Rate limit events are stored in the fsc_rate_limits table when
+  Supabase is configured; otherwise enforced per bot instance.
 
 Bot consent:
   When a user starts the bot, they must review and accept the Terms &

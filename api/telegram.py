@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import io
 import json
+import math
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -31,7 +33,15 @@ from fsc_core import (
     parse_appid,
     validate_vin,
 )
-from supabase_helpers import get_consent, get_stats, log_generation, set_consent, supabase_configured
+from supabase_helpers import (
+    get_consent,
+    get_rate_limit_wait,
+    get_stats,
+    log_generation,
+    record_rate_limit,
+    set_consent,
+    supabase_configured,
+)
 
 
 BOT_TOKEN_ENV = "TELEGRAM_BOT_TOKEN"
@@ -40,6 +50,7 @@ OUTPUT_MODE_ENV = "FSC_BOT_MODE"
 APPID_ENV = "FSC_BOT_APPID"
 ADMIN_CHAT_ID_ENV = "TELEGRAM_ADMIN_CHAT_ID"
 ADMIN_DM_LOGS_ENV = "TELEGRAM_ADMIN_DM_LOGS"
+RATE_LIMIT_SECONDS_ENV = "FSC_RATE_LIMIT_SECONDS"
 
 TERMS_URL = "https://easy-fsc-e3-bot.vercel.app/terms.html"
 PRIVACY_URL = "https://easy-fsc-e3-bot.vercel.app/privacy.html"
@@ -183,7 +194,8 @@ def _help_text() -> str:
         "Send your 7-character VIN, for example:\n"
         "TEST123\n\n"
         "The bot will generate FSC files and send them back as a ZIP.\n"
-        "ZIP mode includes 1CR Remote Start App IDs 017C and 0180."
+        "ZIP mode includes 1CR Remote Start App IDs 017C and 0180.\n\n"
+        "Rate limit: 1 generation per minute."
     )
 
 
@@ -261,6 +273,41 @@ def _record_consent(chat_id: int) -> None:
         set_consent(chat_id, APP_VERSION)
     except Exception as exc:
         print(f"Supabase consent write failed: {exc}", file=sys.stderr)
+
+
+_RATE_MEM: dict[int, float] = {}
+
+
+def _rate_limit_seconds() -> int:
+    try:
+        value = int(os.environ.get(RATE_LIMIT_SECONDS_ENV, "60"))
+    except ValueError:
+        value = 60
+    return max(1, value)
+
+
+def _rate_wait_seconds(subject_id: int) -> int:
+    limit = _rate_limit_seconds()
+    now = time.time()
+    last = _RATE_MEM.get(subject_id)
+    if last is not None:
+        return max(0, int(math.ceil(limit - (now - last))))
+    if supabase_configured():
+        try:
+            return get_rate_limit_wait(subject_id, limit)
+        except Exception:
+            pass
+    return 0
+
+
+def _record_rate(subject_id: int) -> None:
+    _RATE_MEM[subject_id] = time.time()
+    if not supabase_configured():
+        return
+    try:
+        record_rate_limit(subject_id)
+    except Exception as exc:
+        print(f"Supabase rate write failed: {exc}", file=sys.stderr)
 
 
 def _handle_callback(callback: dict) -> None:
@@ -440,6 +487,20 @@ def _handle_update(update: dict) -> None:
             _main_keyboard(),
         )
         return
+
+    user_id = (message.get("from") or {}).get("id")
+    subject_id = user_id or chat_id
+    wait = _rate_wait_seconds(subject_id)
+    if wait > 0:
+        _send_message(
+            chat_id,
+            f"Please wait {wait}s before generating another FSC file.\n"
+            "Rate limit: 1 generation per minute.\n\n"
+            "Created by https://t.me/imkadi. Free use only, not for resale.",
+            _main_keyboard(),
+        )
+        return
+    _record_rate(subject_id)
 
     try:
         mode = _bot_mode()

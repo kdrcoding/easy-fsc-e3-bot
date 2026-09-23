@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-APP_VERSION = "1.0.5"
-APP_VERSION_NAME = "Terms & privacy consent"
+APP_VERSION = "1.0.6"
+APP_VERSION_NAME = "1-minute generation limit"
 BODY_LEN = 0x3C
 SIGNATURE_LEN = 0x80
 VIN_OFFSET = 0x1A

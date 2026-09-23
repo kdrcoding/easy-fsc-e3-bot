@@ -11,7 +11,12 @@ create table if not exists public.fsc_generation_logs (
 create table if not exists public.user_consents (
   user_chat_id text primary key,
   accepted_at timestamptz not null default now(),
-  accepted_version text not null default '1.0.5'
+  accepted_version text not null default '1.0.6'
+);
+
+create table if not exists public.fsc_rate_limits (
+  user_chat_id text primary key,
+  last_generated_at timestamptz not null default now()
 );
 
 create index if not exists fsc_generation_logs_created_at_idx

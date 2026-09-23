@@ -14,6 +14,7 @@ SUPABASE_LOG_TABLE = "fsc_generation_logs"
 SUPABASE_STATS_VIEW = "fsc_generation_stats"
 SUPABASE_DAILY_STATS_VIEW = "fsc_generation_daily_stats"
 SUPABASE_CONSENT_TABLE = "user_consents"
+SUPABASE_RATE_TABLE = "fsc_rate_limits"
 
 
 def _config() -> tuple[str, str] | None:
@@ -99,6 +100,48 @@ def set_consent(user_chat_id: int, accepted_version: str) -> bool:
     }
     _request(
         SUPABASE_CONSENT_TABLE,
+        method="POST",
+        body=payload,
+        prefer="resolution=merge-duplicates,return=minimal",
+    )
+    return True
+
+
+def get_rate_limit_wait(user_chat_id: int, limit_seconds: int) -> int:
+    query = urllib.parse.urlencode(
+        {
+            "select": "last_generated_at",
+            "user_chat_id": f"eq.{user_chat_id}",
+            "limit": "1",
+        }
+    )
+    rows = _get_json(f"{SUPABASE_RATE_TABLE}?{query}")
+    if not rows:
+        return 0
+    raw = rows[0].get("last_generated_at")
+    if not raw:
+        return 0
+    from datetime import datetime, timezone
+
+    last = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    elapsed = (datetime.now(timezone.utc) - last).total_seconds()
+    remaining = limit_seconds - elapsed
+    if remaining <= 0:
+        return 0
+    return int(remaining) + 1
+
+
+def record_rate_limit(user_chat_id: int) -> bool:
+    if not supabase_configured():
+        return False
+    from datetime import datetime, timezone
+
+    payload = {
+        "user_chat_id": str(user_chat_id),
+        "last_generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _request(
+        SUPABASE_RATE_TABLE,
         method="POST",
         body=payload,
         prefer="resolution=merge-duplicates,return=minimal",
