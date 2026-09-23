@@ -340,9 +340,9 @@ _DAILY_MEM: dict[int, tuple[str, int]] = {}
 
 def _daily_limit() -> int:
     try:
-        value = int(os.environ.get(DAILY_LIMIT_ENV, "10"))
+        value = int(os.environ.get(DAILY_LIMIT_ENV, "3"))
     except ValueError:
-        value = 10
+        value = 3
     return max(1, value)
 
 

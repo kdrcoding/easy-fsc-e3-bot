@@ -101,7 +101,7 @@ In the Vercel project settings (Settings -> Environment Variables), set:
       Seconds between generations per user (default 60).
 
   FSC_DAILY_LIMIT
-      Max generations per user per day (default 10).
+      Max generations per user per day (default 3).
 
   SUPABASE_URL
       From Supabase Project Settings -> API -> Project URL.

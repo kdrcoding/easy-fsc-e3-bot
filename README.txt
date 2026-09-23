@@ -18,7 +18,7 @@ Rate limit:
 
 Daily limit:
   Each user can generate at most FSC_DAILY_LIMIT files per day
-  (default 10). Daily usage is stored in the fsc_daily_usage table
+  (default 3). Daily usage is stored in the fsc_daily_usage table
   (one row per user per day, in UTC).
 
 Bot consent:
