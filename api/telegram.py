@@ -565,8 +565,7 @@ def _handle_update(update: dict) -> None:
     except ValueError as exc:
         _send_message(
             chat_id,
-            f"{exc}\n\nSend only the 7-character VIN, for example TEST123.\n\n"
-            "Created by https://t.me/imkadi. Free use only, not for resale.",
+            f"{exc}\n\nSend only the 7-character VIN, for example TEST123.",
             _main_keyboard(),
         )
         return
@@ -576,8 +575,7 @@ def _handle_update(update: dict) -> None:
         _send_message(
             chat_id,
             f"Please wait {wait}s before generating another FSC file.\n"
-            "Rate limit: 1 generation per minute.\n\n"
-            "Created by https://t.me/imkadi. Free use only, not for resale.",
+            "Rate limit: 1 generation per minute.",
             _main_keyboard(),
         )
         return
@@ -587,8 +585,7 @@ def _handle_update(update: dict) -> None:
         _send_message(
             chat_id,
             f"Daily limit reached: {_daily_limit()} different cars per day.\n"
-            "You can still re-generate a VIN you already did today.\n\n"
-            "Created by https://t.me/imkadi. Free use only, not for resale.",
+            "You can still re-generate a VIN you already did today.",
             _main_keyboard(),
         )
         return
@@ -615,7 +612,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 filename,
                 content,
-                f"FSC generated for {vin}\n{remaining_line}Created by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized.",
+                f"FSC generated for {vin}\n{remaining_line}Use only where authorized.",
             )
             try:
                 log_generation(vin=vin, mode="single", file_count=1, sent_filename=filename, user_chat_id=chat_id)
@@ -632,7 +629,7 @@ def _handle_update(update: dict) -> None:
                 chat_id,
                 filename,
                 content,
-                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\n{remaining_line}Created by https://t.me/imkadi\nFree use only. Not for resale.\nUse only where authorized and at your own risk.",
+                f"Generated {len(ALL_APPIDS)} FSC files for {vin}\nIncludes 1CR Remote Start App IDs 017C and 0180.\n{remaining_line}Use only where authorized and at your own risk.",
             )
             try:
                 log_generation(
