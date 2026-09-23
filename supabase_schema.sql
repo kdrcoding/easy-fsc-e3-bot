@@ -21,3 +21,13 @@ select
   count(*) filter (where mode = 'single')::integer as single_requests,
   max(created_at) as last_generated_at
 from public.fsc_generation_logs;
+
+create or replace view public.fsc_generation_daily_stats
+with (security_invoker = true) as
+select
+  created_at::date as day,
+  count(*)::integer as requests,
+  coalesce(sum(file_count), 0)::integer as fsc_files,
+  count(distinct user_chat_id)::integer as unique_users
+from public.fsc_generation_logs
+group by created_at::date;

@@ -2,7 +2,7 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.3 - Separated option buttons
+  1.0.4 - Detailed stats view
   FSC output remains original-match verified.
 
 Created by:
@@ -49,8 +49,9 @@ Telegram bot:
   See TELEGRAM_BOT_SETUP.txt.
 
 Admin reader:
-  Set TELEGRAM_ADMIN_CHAT_ID in Vercel to receive a private admin log whenever
-  the bot generates files.
+  Set TELEGRAM_ADMIN_CHAT_ID in Vercel for admin-only /stats.
+  Set TELEGRAM_ADMIN_DM_LOGS=true only if you want a private message for every
+  generation.
 
 Supabase stats:
   Run supabase_schema.sql in Supabase, then set SUPABASE_URL and

@@ -12,6 +12,7 @@ SUPABASE_SECRET_KEY_ENV = "SUPABASE_SECRET_KEY"
 SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY"
 SUPABASE_LOG_TABLE = "fsc_generation_logs"
 SUPABASE_STATS_VIEW = "fsc_generation_stats"
+SUPABASE_DAILY_STATS_VIEW = "fsc_generation_daily_stats"
 
 
 def _config() -> tuple[str, str] | None:
@@ -49,6 +50,22 @@ def _request(path: str, method: str = "GET", body: dict | None = None) -> tuple[
         raise RuntimeError(f"Supabase HTTP {exc.code}: {error_body or exc.reason}") from exc
 
 
+def _get_json(path: str):
+    _status, body = _request(path)
+    if not body:
+        return []
+    decoded_body = body.decode("utf-8", errors="replace")
+    try:
+        return json.loads(decoded_body)
+    except json.JSONDecodeError as exc:
+        preview = decoded_body[:500]
+        raise RuntimeError(
+            "Supabase returned non-JSON. "
+            f"Response preview: {preview!r}. "
+            "Use SUPABASE_SERVICE_ROLE_KEY from Supabase Project Settings > API/API Keys."
+        ) from exc
+
+
 def log_generation(
     *,
     vin: str,
@@ -81,25 +98,26 @@ def get_stats() -> dict:
             "zip_requests": 0,
             "single_requests": 0,
             "last_generated_at": None,
+            "recent_generations": [],
+            "daily": [],
         }
 
     query = urllib.parse.urlencode({"select": "*", "limit": "1"})
-    _status, body = _request(f"{SUPABASE_STATS_VIEW}?{query}")
-    if not body:
-        raise RuntimeError(
-            "Supabase returned an empty response. Check SUPABASE_URL and use a service_role key, not the database password."
-        )
-    decoded_body = body.decode("utf-8", errors="replace")
-    try:
-        rows = json.loads(decoded_body)
-    except json.JSONDecodeError as exc:
-        preview = decoded_body[:500]
-        raise RuntimeError(
-            "Supabase returned non-JSON for stats. "
-            f"Response preview: {preview!r}. "
-            "Use SUPABASE_SERVICE_ROLE_KEY from Supabase Project Settings > API/API Keys."
-        ) from exc
+    rows = _get_json(f"{SUPABASE_STATS_VIEW}?{query}")
     stats = rows[0] if rows else {}
+    recent_query = urllib.parse.urlencode(
+        {
+            "select": "created_at,vin,mode,file_count,sent_filename,user_chat_id",
+            "order": "created_at.desc",
+            "limit": "10",
+        }
+    )
+    daily_query = urllib.parse.urlencode({"select": "*", "order": "day.desc", "limit": "14"})
+    recent = _get_json(f"{SUPABASE_LOG_TABLE}?{recent_query}")
+    try:
+        daily = _get_json(f"{SUPABASE_DAILY_STATS_VIEW}?{daily_query}")
+    except RuntimeError:
+        daily = []
     return {
         "ok": True,
         "supabase_configured": True,
@@ -109,4 +127,6 @@ def get_stats() -> dict:
         "zip_requests": int(stats.get("zip_requests") or 0),
         "single_requests": int(stats.get("single_requests") or 0),
         "last_generated_at": stats.get("last_generated_at"),
+        "recent_generations": recent,
+        "daily": daily,
     }

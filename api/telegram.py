@@ -39,6 +39,7 @@ WEBHOOK_SECRET_ENV = "TELEGRAM_WEBHOOK_SECRET"
 OUTPUT_MODE_ENV = "FSC_BOT_MODE"
 APPID_ENV = "FSC_BOT_APPID"
 ADMIN_CHAT_ID_ENV = "TELEGRAM_ADMIN_CHAT_ID"
+ADMIN_DM_LOGS_ENV = "TELEGRAM_ADMIN_DM_LOGS"
 
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, body: dict) -> None:
@@ -127,6 +128,8 @@ def _is_admin(chat_id: int) -> bool:
 
 
 def _notify_admin(user_chat_id: int, vin: str, mode: str, file_count: int, filename: str) -> None:
+    if os.environ.get(ADMIN_DM_LOGS_ENV, "").strip().lower() not in {"1", "true", "yes", "on"}:
+        return
     admin_chat_id = _admin_chat_id()
     if not admin_chat_id:
         return
@@ -259,7 +262,7 @@ def _handle_update(update: dict) -> None:
                     f"Single requests: {stats.get('single_requests', 0)}",
                     f"Last generated: {stats.get('last_generated_at') or 'none'}",
                     "",
-                    "The bot also sends you a private log message every time FSC files are generated.",
+                    "Generation DMs are off by default. Set TELEGRAM_ADMIN_DM_LOGS=true to enable them.",
                 ]
             ),
             _main_keyboard(),

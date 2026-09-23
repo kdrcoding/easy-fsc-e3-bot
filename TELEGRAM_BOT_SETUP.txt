@@ -13,6 +13,7 @@ Environment variables to add in Vercel:
   TELEGRAM_WEBHOOK_SECRET  A long random string you choose
   FSC_BOT_MODE             zip
   TELEGRAM_ADMIN_CHAT_ID   Optional: your Telegram numeric chat ID for admin logs
+  TELEGRAM_ADMIN_DM_LOGS   Optional: true to receive a DM for every generation
   SUPABASE_URL             Optional: Supabase project URL for permanent stats
   SUPABASE_SECRET_KEY      Optional: Supabase server secret key
                            Legacy alternative: SUPABASE_SERVICE_ROLE_KEY
@@ -22,9 +23,10 @@ Optional:
   FSC_BOT_APPID=017C
 
 Admin reader:
-  If TELEGRAM_ADMIN_CHAT_ID is set, the bot sends that admin a private log
-  every time FSC files are generated. The log includes VIN, mode, file count,
-  sent filename, and user chat ID.
+  If TELEGRAM_ADMIN_CHAT_ID is set, /admin and /stats are available to that
+  admin. Per-generation direct messages are off by default. Set
+  TELEGRAM_ADMIN_DM_LOGS=true only if you want a private message every time
+  someone generates files.
 
   To find your chat ID:
     1. Message the bot from your Telegram account.

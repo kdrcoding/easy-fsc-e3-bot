@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-APP_VERSION = "1.0.3"
-APP_VERSION_NAME = "Separated option buttons"
+APP_VERSION = "1.0.4"
+APP_VERSION_NAME = "Detailed stats view"
 BODY_LEN = 0x3C
 SIGNATURE_LEN = 0x80
 VIN_OFFSET = 0x1A

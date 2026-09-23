@@ -50,12 +50,22 @@
     }
     .stats-grid strong { display: block; font-size: 24px; }
     .stats-grid span { color: #64748b; font-size: 13px; }
+    .stats-details { margin-top: 18px; }
+    .stats-details h3 { margin: 18px 0 8px; font-size: 16px; }
+    .stats-details table { width: 100%; border-collapse: collapse; background: #fff; }
+    .stats-details th, .stats-details td {
+      border: 1px solid #dbe3ef;
+      padding: 7px;
+      text-align: left;
+      font-size: 13px;
+    }
+    .stats-details th { background: #eef2f7; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Easy FSC E3 Bot v1.0.3</h1>
-    <p>Separated option buttons build. FSC output remains original-match verified.</p>
+    <h1>Easy FSC E3 Bot v1.0.4</h1>
+    <p>Detailed stats view build. FSC output remains original-match verified.</p>
     <p>Telegram webhook service is deployed.</p>
     <p><strong>Free use only. Not for resale.</strong></p>
     <section class="stats">
@@ -66,6 +76,7 @@
         <div><strong id="uniqueUsers">-</strong><span>Users</span></div>
       </div>
       <p id="statsNote">Loading usage stats...</p>
+      <div id="statsDetails" class="stats-details"></div>
     </section>
     <p>Health check: <a href="/api/ping"><code>/api/ping</code></a></p>
     <p>Telegram endpoint: <a href="/api/telegram"><code>/api/telegram</code></a></p>
@@ -86,6 +97,18 @@
         document.getElementById("statsNote").textContent = stats.supabase_configured
           ? "Live totals from bot generations."
           : "Stats database is not configured yet.";
+        const recent = (stats.recent_generations || []).slice(0, 5);
+        const daily = (stats.daily || []).slice(0, 7);
+        document.getElementById("statsDetails").innerHTML = `
+          <h3>Recent Generations</h3>
+          ${recent.length ? `<table><thead><tr><th>Time</th><th>VIN</th><th>Mode</th><th>Files</th></tr></thead><tbody>${recent.map(row => `
+            <tr><td>${new Date(row.created_at).toLocaleString()}</td><td>${row.vin}</td><td>${row.mode}</td><td>${row.file_count}</td></tr>
+          `).join("")}</tbody></table>` : `<p>No generations logged yet.</p>`}
+          <h3>Last 7 Days</h3>
+          ${daily.length ? `<table><thead><tr><th>Day</th><th>Requests</th><th>Files</th><th>Users</th></tr></thead><tbody>${daily.map(row => `
+            <tr><td>${row.day}</td><td>${row.requests}</td><td>${row.fsc_files}</td><td>${row.unique_users}</td></tr>
+          `).join("")}</tbody></table>` : `<p>No daily stats yet.</p>`}
+        `;
       } catch (error) {
         document.getElementById("statsNote").textContent = "Stats unavailable.";
       }

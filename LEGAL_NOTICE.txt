@@ -2,7 +2,7 @@ Easy FSC E3
 ============
 
 Version:
-  1.0.3 - Separated option buttons
+  1.0.4 - Detailed stats view
   FSC output remains original-match verified.
 
 Created by:
