@@ -4,6 +4,10 @@ Telegram bot that generates FSC (FSC-E3) files for your 7-character VINs — plu
 
 **Current version: 1.1.0** — "Admin errors, daily cap, re-consent"
 
+## :robot: Open the bot in Telegram
+
+> **[https://t.me/FSCCreateBOT](https://t.me/FSCCreateBOT)** — tap to open, press **Start**, and send your 7-character VIN.
+
 - Made by [https://t.me/imkadi](https://t.me/imkadi)
 - Free to use. Not for resale.
 
@@ -23,6 +27,7 @@ Telegram bot that generates FSC (FSC-E3) files for your 7-character VINs — plu
 ## Feature highlights
 
 - Send any **7-character VIN** to the bot, get FSC files back as a ZIP.
+- **[Open the bot now → https://t.me/FSCCreateBOT](https://t.me/FSCCreateBOT)**
 - ZIP mode includes the **21 App IDs** — the same ones the original `fsc_E3.py` generates.
 - **1CR Remote Engine Start** included: `017C` (DME1) and `0180` (DME2).
 - Users must **accept Terms & Conditions and the Privacy Policy** before generating.
