@@ -51,10 +51,6 @@ constants, offsets, template handling, and FSC output format.
 
 All App IDs:
   Batch/ZIP mode generates the same 21 FSC files as the original fsc_E3.py.
-  ZIP downloads are named FSC_<VIN>_<DDMMYYYY>_<HHMMSS>.zip and contain both
-  the raw FSC_<VIN>_<APPID>.fsc and a base64 <VIN>_<APPID>.fsc per App ID.
-  Extra App IDs can be added with the FSC_BOT_APPIDS environment variable
-  (comma-separated hex values, e.g. 009C,009E,009F,00A0,00DE,00A8).
   1CR Remote Engine Start is included:
     017C - DME1
     0180 - DME2

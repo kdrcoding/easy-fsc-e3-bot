@@ -28,8 +28,7 @@ Telegram bot that generates FSC (FSC-E3) files for your 7-character VINs — plu
 
 - Send any **7-character VIN** to the bot, get FSC files back as a ZIP.
 - **[Open the bot now → https://t.me/FSCCreateBOT](https://t.me/FSCCreateBOT)**
-- ZIP mode includes the **21 App IDs** — the same ones the original `fsc_E3.py` generates — plus any extras you set via `FSC_BOT_APPIDS`.
-- ZIP downloads use `FSC_<VIN>_<DDMMYYYY>_<HHMMSS>.zip` and every App ID ships as both the raw `FSC_<VIN>_<APPID>.fsc` and a base64 `<VIN>_<APPID>.fsc` copy.
+- ZIP mode includes the **21 App IDs** — the same ones the original `fsc_E3.py` generates.
 - **1CR Remote Engine Start** included: `017C` (DME1) and `0180` (DME2).
 - Users must **accept Terms & Conditions and the Privacy Policy** before generating.
 - **Admin-only stats**: `/stats` shows total requests, total FSC files, unique users, and daily breakdown.
@@ -75,7 +74,6 @@ The repo is a Vercel serverless project. Connect the repo (or import it), and se
 | `TELEGRAM_WEBHOOK_SECRET` | Yes | A random secret you choose; secures the webhook URL |
 | `FSC_BOT_MODE` | No | `single` or `zip` (default `zip`) |
 | `FSC_BOT_APPID` | No | Custom App ID for single mode (default `017C`) |
-| `FSC_BOT_APPIDS` | No | Extra App IDs to add to ZIP mode, comma-separated hex (e.g. `009C,009E,009F,00A0,00DE,00A8`) |
 | `TELEGRAM_ADMIN_CHAT_ID` | No | Your chat ID — enables `/stats` and error reports |
 | `TELEGRAM_ADMIN_DM_LOGS` | No | `true` = DM you on every generation (default off) |
 | `FSC_RATE_LIMIT_SECONDS` | No | Seconds between generations (default `60`) |

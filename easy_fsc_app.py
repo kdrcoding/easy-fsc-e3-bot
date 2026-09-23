@@ -5,7 +5,6 @@ import subprocess
 import sys
 import tkinter as tk
 import zipfile
-from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
@@ -465,18 +464,17 @@ class EasyFscApp(tk.Tk):
 
         vin_text = vin.decode("ascii")
         mode = self.mode_var.get()
-        label = self._fsc_label
 
         try:
             if mode == "single":
                 appid = self._selected_appid()
                 result = build_fsc(template, vin, appid)
-                output_path = self.output_dir / f"FSC_{vin_text}_{label(appid)}.fsc"
+                output_path = self.output_dir / f"FSC_{vin_text}_{appid:04x}.fsc"
                 output_path.write_bytes(result.data)
                 self.last_output_dir = self.output_dir
                 self._show_single_result(output_path, appid, result)
             elif mode == "zip":
-                zip_path = self.output_dir / f"FSC_{vin_text}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.zip"
+                zip_path = self.output_dir / f"FSC_{vin_text}_all.zip"
                 first = self._write_zip(zip_path, template, vin, vin_text)
                 self.last_output_dir = self.output_dir
                 self._show_batch_result(zip_path, len(ALL_APPIDS), first)
@@ -493,15 +491,11 @@ class EasyFscApp(tk.Tk):
 
         self.status_var.set("Done")
 
-    @staticmethod
-    def _fsc_label(appid: int) -> str:
-        return f"{appid:04X}0001"
-
     def _write_all_files(self, folder: Path, template: bytearray, vin: bytes, vin_text: str):
         first = None
         for appid in ALL_APPIDS:
             result = build_fsc(template, vin, appid)
-            (folder / f"FSC_{vin_text}_{self._fsc_label(appid)}.fsc").write_bytes(result.data)
+            (folder / f"FSC_{vin_text}_{appid:04x}.fsc").write_bytes(result.data)
             first = first or (appid, result)
         return first
 
@@ -510,7 +504,7 @@ class EasyFscApp(tk.Tk):
         with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for appid in ALL_APPIDS:
                 result = build_fsc(template, vin, appid)
-                archive.writestr(f"FSC_{vin_text}_{self._fsc_label(appid)}.fsc", result.data)
+                archive.writestr(f"FSC_{vin_text}_{appid:04x}.fsc", result.data)
                 first = first or (appid, result)
         return first
 
