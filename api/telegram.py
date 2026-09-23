@@ -36,11 +36,11 @@ from fsc_core import (
 )
 from supabase_helpers import (
     get_consent,
-    get_daily_count,
+    get_daily_vins,
     get_rate_limit_wait,
     get_stats,
     log_generation,
-    record_daily_usage,
+    record_daily_vin,
     record_rate_limit,
     set_consent,
     supabase_configured,
@@ -220,7 +220,7 @@ def _help_text() -> str:
         "TEST123\n\n"
         "The bot will generate FSC files and send them back as a ZIP.\n"
         "ZIP mode includes 1CR Remote Start App IDs 017C and 0180.\n\n"
-        f"Limits: 1 generation per minute, up to {_daily_limit()} per day."
+        f"Limits: 1 generation per minute, up to {_daily_limit()} different VINs per day. Re-generating the same VIN is free."
     )
 
 
@@ -339,7 +339,7 @@ def _record_rate(subject_id: int) -> None:
         print(f"Supabase rate write failed: {exc}", file=sys.stderr)
 
 
-_DAILY_MEM: dict[int, tuple[str, int]] = {}
+_DAILY_MEM: dict[int, tuple[str, set[str]]] = {}
 
 
 def _daily_limit() -> int:
@@ -354,33 +354,38 @@ def _utc_date() -> str:
     return time.strftime("%Y-%m-%d", time.gmtime())
 
 
-def _daily_used(subject_id: int) -> int:
+def _daily_vins(subject_id: int) -> set[str]:
     today = _utc_date()
     mem = _DAILY_MEM.get(subject_id)
     if mem and mem[0] == today:
-        return mem[1]
+        return set(mem[1])
     if not supabase_configured():
-        return 0
+        return set()
     try:
-        return get_daily_count(subject_id)
+        return set(get_daily_vins(subject_id))
     except Exception:
-        return 0
+        return set()
 
 
-def _daily_remaining(subject_id: int) -> int:
-    return max(0, _daily_limit() - _daily_used(subject_id))
+def _daily_used(subject_id: int) -> int:
+    return len(_daily_vins(subject_id))
 
 
-def _record_daily(subject_id: int) -> None:
+def _daily_has(subject_id: int, vin: str) -> bool:
+    return vin in _daily_vins(subject_id)
+
+
+def _record_daily(subject_id: int, vin: str) -> None:
     today = _utc_date()
-    used = _daily_used(subject_id) + 1
+    vins = _daily_vins(subject_id)
+    vins.add(vin)
     if len(_DAILY_MEM) > 5000:
         _DAILY_MEM.clear()
-    _DAILY_MEM[subject_id] = (today, used)
+    _DAILY_MEM[subject_id] = (today, vins)
     if not supabase_configured():
         return
     try:
-        record_daily_usage(subject_id, today, used)
+        record_daily_vin(subject_id, today, vin)
     except Exception as exc:
         print(f"Supabase daily write failed: {exc}", file=sys.stderr)
 
@@ -576,22 +581,29 @@ def _handle_update(update: dict) -> None:
             _main_keyboard(),
         )
         return
-    if _daily_remaining(subject_id) <= 0:
+    used = _daily_used(subject_id)
+    already = _daily_has(subject_id, vin)
+    if used >= _daily_limit() and not already:
         _send_message(
             chat_id,
-            f"Daily limit reached: {_daily_limit()} generations per day.\n"
-            "Try again tomorrow.\n\n"
+            f"Daily limit reached: {_daily_limit()} different cars per day.\n"
+            "You can still re-generate a VIN you already did today.\n\n"
             "Created by https://t.me/imkadi. Free use only, not for resale.",
             _main_keyboard(),
         )
         return
     _record_rate(subject_id)
-    _record_daily(subject_id)
-    remaining = _daily_limit() - _daily_used(subject_id)
+    if already:
+        remaining = _daily_limit() - used
+    else:
+        _record_daily(subject_id, vin)
+        remaining = _daily_limit() - (used + 1)
     if remaining > 1:
         remaining_line = f"You have {remaining} generations left today.\n"
     elif remaining == 1:
         remaining_line = "You have 1 more generation left today.\n"
+    elif already:
+        remaining_line = "Same VIN as before, no daily credit taken.\n"
     else:
         remaining_line = "You have reached today's generation limit. Try again tomorrow.\n"
 

@@ -19,11 +19,16 @@ create table if not exists public.fsc_rate_limits (
   last_generated_at timestamptz not null default now()
 );
 
-create table if not exists public.fsc_daily_usage (
-  user_chat_id text primary key,
+create table if not exists public.fsc_daily_vins (
+  user_chat_id text not null,
   used_on date not null default (current_date at time zone 'utc'),
-  count integer not null default 0
+  vin text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_chat_id, used_on, vin)
 );
+
+create index if not exists fsc_daily_vins_user_day_idx
+  on public.fsc_daily_vins (user_chat_id, used_on);
 
 create index if not exists fsc_generation_logs_created_at_idx
   on public.fsc_generation_logs (created_at desc);

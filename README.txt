@@ -17,9 +17,11 @@ Rate limit:
   Supabase is configured; otherwise enforced per bot instance.
 
 Daily limit:
-  Each user can generate at most FSC_DAILY_LIMIT files per day
-  (default 3). Daily usage is stored in the fsc_daily_usage table
-  (one row per user per day, in UTC).
+  Each user can generate FSC files for at most FSC_DAILY_LIMIT
+  different VINs per day (default 3). Re-generating a VIN that was
+  already generated today does not use any daily credit. Daily VINs are
+  stored in the fsc_daily_vins table (one row per user per day per VIN,
+  in UTC).
 
 Bot consent:
   When a user starts the bot, they must review and accept the Terms &

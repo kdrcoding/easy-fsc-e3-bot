@@ -15,7 +15,7 @@ SUPABASE_STATS_VIEW = "fsc_generation_stats"
 SUPABASE_DAILY_STATS_VIEW = "fsc_generation_daily_stats"
 SUPABASE_CONSENT_TABLE = "user_consents"
 SUPABASE_RATE_TABLE = "fsc_rate_limits"
-SUPABASE_DAILY_TABLE = "fsc_daily_usage"
+SUPABASE_DAILY_VINS_TABLE = "fsc_daily_vins"
 
 
 def _config() -> tuple[str, str] | None:
@@ -150,34 +150,32 @@ def record_rate_limit(user_chat_id: int) -> bool:
     return True
 
 
-def get_daily_count(user_chat_id: int) -> int:
+def get_daily_vins(user_chat_id: int) -> list[str]:
     from datetime import datetime, timezone
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     query = urllib.parse.urlencode(
         {
-            "select": "count",
+            "select": "vin",
             "user_chat_id": f"eq.{user_chat_id}",
             "used_on": f"eq.{today}",
-            "limit": "1",
+            "limit": "10000",
         }
     )
-    rows = _get_json(f"{SUPABASE_DAILY_TABLE}?{query}")
-    if not rows:
-        return 0
-    return int(rows[0].get("count") or 0)
+    rows = _get_json(f"{SUPABASE_DAILY_VINS_TABLE}?{query}")
+    return [str(row.get("vin")) for row in rows if row.get("vin")]
 
 
-def record_daily_usage(user_chat_id: int, used_on: str, count: int) -> bool:
+def record_daily_vin(user_chat_id: int, used_on: str, vin: str) -> bool:
     if not supabase_configured():
         return False
     payload = {
         "user_chat_id": str(user_chat_id),
         "used_on": used_on,
-        "count": count,
+        "vin": vin,
     }
     _request(
-        SUPABASE_DAILY_TABLE,
+        SUPABASE_DAILY_VINS_TABLE,
         method="POST",
         body=payload,
         prefer="resolution=merge-duplicates,return=minimal",
