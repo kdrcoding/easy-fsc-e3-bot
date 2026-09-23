@@ -106,7 +106,7 @@ A ready-made PowerShell script is in **`set_telegram_webhook.ps1`**.
 4. Pick the output folder
 5. Click **Generate FSC**
 
-Powertoys for Windows: double-click **`run_easy_fsc.bat`** to run, or **`build_exe.bat`** to build `dist\Easy_FSC_E3.exe`.
+For Windows: double-click **`run_easy_fsc.bat`** to run, or **`build_exe.bat`** to build `dist\Easy_FSC_E3.exe`.
 
 ## Web pages
 
