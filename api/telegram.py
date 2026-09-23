@@ -286,6 +286,8 @@ def _is_consented(chat_id: int) -> bool:
         accepted_version = None
     if accepted_version == APP_VERSION:
         _CONSENT_MEM.add(chat_id)
+        if len(_CONSENT_MEM) > 5000:
+            _CONSENT_MEM.clear()
         return True
     return False
 
@@ -326,6 +328,8 @@ def _rate_wait_seconds(subject_id: int) -> int:
 
 
 def _record_rate(subject_id: int) -> None:
+    if len(_RATE_MEM) > 5000:
+        _RATE_MEM.clear()
     _RATE_MEM[subject_id] = time.time()
     if not supabase_configured():
         return
@@ -370,6 +374,8 @@ def _daily_remaining(subject_id: int) -> int:
 def _record_daily(subject_id: int) -> None:
     today = _utc_date()
     used = _daily_used(subject_id) + 1
+    if len(_DAILY_MEM) > 5000:
+        _DAILY_MEM.clear()
     _DAILY_MEM[subject_id] = (today, used)
     if not supabase_configured():
         return
@@ -472,10 +478,13 @@ def _handle_update(update: dict) -> None:
     if not chat_id:
         return
 
+    user_id = (message.get("from") or {}).get("id")
+    subject_id = user_id or chat_id
+
     normalized_text = text.lower()
 
     if not text or normalized_text == "/start":
-        if _is_consented(chat_id):
+        if _is_consented(subject_id):
             _send_message(chat_id, _short_start_text(), _main_keyboard())
         else:
             _send_consent_prompt(chat_id)
@@ -511,7 +520,7 @@ def _handle_update(update: dict) -> None:
         )
         return
 
-    if not _is_consented(chat_id):
+    if not _is_consented(subject_id):
         _send_consent_prompt(chat_id)
         return
 
@@ -557,8 +566,6 @@ def _handle_update(update: dict) -> None:
         )
         return
 
-    user_id = (message.get("from") or {}).get("id")
-    subject_id = user_id or chat_id
     wait = _rate_wait_seconds(subject_id)
     if wait > 0:
         _send_message(
@@ -595,7 +602,10 @@ def _handle_update(update: dict) -> None:
                 log_generation(vin=vin, mode="single", file_count=1, sent_filename=filename, user_chat_id=chat_id)
             except Exception as exc:
                 print(f"Supabase log failed: {exc}", file=sys.stderr)
-            _notify_admin(chat_id, vin, "single", 1, filename)
+            try:
+                _notify_admin(chat_id, vin, "single", 1, filename)
+            except Exception as exc:
+                print(f"Admin DM log failed: {exc}", file=sys.stderr)
         else:
             content = _build_zip(vin)
             filename = f"FSC_{vin}_all.zip"
@@ -615,10 +625,16 @@ def _handle_update(update: dict) -> None:
                 )
             except Exception as exc:
                 print(f"Supabase log failed: {exc}", file=sys.stderr)
-            _notify_admin(chat_id, vin, "zip", len(ALL_APPIDS), filename)
+            try:
+                _notify_admin(chat_id, vin, "zip", len(ALL_APPIDS), filename)
+            except Exception as exc:
+                print(f"Admin DM log failed: {exc}", file=sys.stderr)
     except Exception as exc:
         _send_message(chat_id, "Generation failed. Please check the VIN and try again.")
-        _notify_admin_error(subject_id, text, exc)
+        try:
+            _notify_admin_error(subject_id, text, exc)
+        except Exception as admin_exc:
+            print(f"Admin error DM failed: {admin_exc}", file=sys.stderr)
 
 
 class handler(BaseHTTPRequestHandler):
